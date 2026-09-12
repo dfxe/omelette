@@ -643,11 +643,11 @@ class Indicator extends PanelMenu.Button {
 
     // Swap the stock icon for the omelette mark now that we know where it is.
     //
-    // The panel-specific artwork keeps the skillet light against a dark bar;
-    // the detailed launcher icon loses its dark pan when reduced to 16 px.
+    // The symbolic mark shares the website and application logo while adapting
+    // its colour to the current GNOME panel theme.
     _applyPanelIcon() {
         if (!this._path) return;
-        const file = GLib.build_filenamev([this._path, 'icons', 'omelette-panel-v2.svg']);
+        const file = GLib.build_filenamev([this._path, 'icons', 'omelette-symbolic.svg']);
         if (!GLib.file_test(file, GLib.FileTest.EXISTS)) return;
         this._panelIcon.set_gicon(Gio.icon_new_for_string(file));
     }

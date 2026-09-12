@@ -118,9 +118,8 @@ private struct AboutView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "lock.rectangle.stack")
-                .font(.system(size: 30))
-                .foregroundStyle(.tint)
+            OmeletteMark()
+                .frame(width: 34, height: 34)
 
             Text("Omelette \(version)")
                 .font(.headline)
@@ -133,7 +132,7 @@ private struct AboutView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Link("github.com/dfxe/cboite", destination: URL(string: "https://github.com/dfxe/cboite")!)
+            Link("github.com/dfxe/omelette", destination: URL(string: "https://github.com/dfxe/omelette")!)
                 .font(.caption)
         }
         .multilineTextAlignment(.center)

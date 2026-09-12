@@ -6,7 +6,7 @@ your top bar, for macOS and GNOME.
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![GNOME 45-49](https://img.shields.io/badge/GNOME-45--49-4A86CF)
 ![license MIT](https://img.shields.io/badge/license-MIT-green)
-[![website](https://img.shields.io/badge/website-dfxe.github.io%2Fcboite-f0f0ea)](https://dfxe.github.io/cboite)
+[![website](https://img.shields.io/badge/website-dfxe.github.io%2Fomelette-f0f0ea)](https://dfxe.github.io/omelette)
 
 Your clipboard remembers one thing. Omelette remembers the last few hundred,
 keeps your recent screenshots beside them, and gives any of it back with a
@@ -463,10 +463,7 @@ responding to clicks.
 
 ### The website
 
-[dfxe.github.io/cboite](https://dfxe.github.io/cboite) is built
-from this file: `docs/build.mjs` lifts the tagline, lede, support matrix and
-install steps into `docs/index.template.html`, so the page has no prose of its own
-to fall out of date. A push to `main` redeploys it.
+[dfxe.github.io/omelette](https://dfxe.github.io/omelette) is a concise project page, built from this file: `docs/build.mjs` lifts the tagline and lede into `docs/index.template.html`; the README holds the full documentation. A push to `main` redeploys it.
 
 ```sh
 npm ci --prefix docs

@@ -12,9 +12,12 @@ struct OmeletteApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("omelette", systemImage: "lock.rectangle.stack") {
+        MenuBarExtra {
             PopoverView()
                 .environmentObject(store)
+        } label: {
+            OmeletteMark()
+                .frame(width: 18, height: 18)
         }
         .menuBarExtraStyle(.window)
     }

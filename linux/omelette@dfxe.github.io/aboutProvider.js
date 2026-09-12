@@ -10,7 +10,7 @@
 import { scoreAnyPre, normalize, byScore, NO_MATCH } from './match.js';
 import { openUri } from './uri.js';
 
-const PROJECT_URL = 'https://github.com/dfxe/cboite';
+const PROJECT_URL = 'https://github.com/dfxe/omelette';
 
 // Short enough that a stray keystroke can't summon the section, long enough
 // that "abo" and "pre" still work.
@@ -48,7 +48,7 @@ export const aboutProvider = {
                 score: aboutScore,
                 index: 0,
                 title: `Omelette${version}`,
-                subtitle: 'A GNOME extension · MIT · github.com/dfxe/cboite',
+                subtitle: 'A GNOME extension · MIT · github.com/dfxe/omelette',
                 visual: { kind: 'icon', name: 'help-about-symbolic', size: 32 },
                 accel: 'Open',
                 run: () => {

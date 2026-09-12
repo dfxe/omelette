@@ -5,11 +5,11 @@
 //   node docs/build.mjs            render the shots, then build docs/_site/
 //   node docs/build.mjs --check    verify the committed shots are current (CI)
 //
-// The page carries no prose of its own. Four regions are lifted out of
+// The page carries no prose of its own. Two regions are lifted out of
 // README.md at build time and substituted into index.template.html, so the two
 // cannot drift: docs/_site/ is generated and gitignored, and the workflow
-// rebuilds it on every push to main. Editing the README is how you edit the
-// page.
+// rebuilds it on every push to main. The page deliberately uses only the README
+// tagline and lede; the full details remain in the README.
 //
 // No package.json and no dependencies, matching the rest of the repo — the one
 // exception is Playwright, which is imported lazily so that --check (the mode
@@ -121,8 +121,6 @@ function extract(markdown) {
     return {
         tagline: render(intro[0]),
         lede: render(intro.slice(1, 3).join('\n\n')),
-        glance: render(section(sections, 'at a glance')),
-        install: render(section(sections, 'how to install')),
     };
 }
 
