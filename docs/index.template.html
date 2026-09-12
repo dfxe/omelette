@@ -23,24 +23,10 @@
         />
         <meta property="og:image" content="shots/gnome-command-bar.png" />
         <meta property="og:type" content="website" />
-        <!-- The omelette mark on a filled tile — the same two colours as the
-             editor's application icon, so a tab, the app and the top bar all
-             read as one thing.
-             The tile being *filled* is the load-bearing part. A browser tab is
-             light in one theme and dark in the other, so the icon cannot borrow
-             contrast from its background — an earlier outline-on-#2c2c2c
-             version disappeared entirely on a dark tab. A saturated fill reads
-             against both.
-             The path is the 16px grid from
-             linux/omelette@dfxe.github.io/icons/omelette-symbolic.svg, scaled
-             and centred by the transform rather than redrawn, so the two cannot
-             drift. The fold is an evenodd hole, which lets the blue show
-             through instead of needing a third colour.
-             Every # must be %23 or it terminates the URL as a fragment and the
-             icon silently fails to load. -->
+        <!-- The shipped Omelette app icon is used unchanged for the browser tab and site header. -->
         <link
             rel="icon"
-            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a86cf'/%3E%3Cg transform='translate(2.78 3.52) scale(1.65)'%3E%3Cpath fill='%23f6d32d' fill-rule='evenodd' d='M8 2.2C12 2.2 15.2 5.5 15.2 9.6C15.2 10.5 14.95 11.2 14.5 11.75C14.05 12.3 13.25 12.5 12.6 12.2C11.6 12.95 10.53 12.95 9.53 12.2C8.53 12.95 7.47 12.95 6.47 12.2C5.47 12.95 4.4 12.95 3.4 12.2C2.75 12.5 1.95 12.3 1.5 11.75C1.05 11.2 0.8 10.5 0.8 9.6C0.8 5.5 4 2.2 8 2.2ZM4.35 10.7C5.3 7.15 8.05 4.5 11.75 3.85C9.15 5.75 7.2 8.4 6.2 11.45C5.6 10.95 4.95 10.7 4.35 10.7Z'/%3E%3C/g%3E%3C/svg%3E"
+            href="assets/omelette.png" type="image/png"
         />
         <style>
             *,
@@ -55,9 +41,6 @@
                 --dim: #74766e;
                 --line: rgba(240, 240, 234, 0.22);
                 --hair: rgba(240, 240, 234, 0.12);
-                /* Matches the body background. The brand mark's front board
-                   fills with this to hide the sheet behind it. */
-                --mark-bg: #222;
                 --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             }
 
@@ -122,7 +105,7 @@
                 text-decoration: none;
             }
 
-            .brand svg {
+            .brand img {
                 display: block;
                 width: 20px;
                 height: 20px;
@@ -362,24 +345,7 @@
         <div class="shell">
             <header class="topbar micro">
                 <a class="brand" href="./">
-                    <!-- A folded omelette. The source of truth for this shape is
-                         linux/omelette@dfxe.github.io/icons/omelette-symbolic.svg
-                         — the path below is that file's 16px grid, positioned by
-                         the transform rather than redrawn, so editing the mark
-                         means editing it in both places and nowhere else.
-                         The fold is an evenodd hole rather than a second shape,
-                         so the page background shows through and the mark stays
-                         one colour. That also retires the --mark-bg knockout the
-                         old clipboard needed: nothing here overlaps. -->
-                    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                        <g transform="translate(2.78 3.52) scale(1.65)">
-                            <path
-                                fill="#f6d32d"
-                                fill-rule="evenodd"
-                                d="M8 2.2C12 2.2 15.2 5.5 15.2 9.6C15.2 10.5 14.95 11.2 14.5 11.75C14.05 12.3 13.25 12.5 12.6 12.2C11.6 12.95 10.53 12.95 9.53 12.2C8.53 12.95 7.47 12.95 6.47 12.2C5.47 12.95 4.4 12.95 3.4 12.2C2.75 12.5 1.95 12.3 1.5 11.75C1.05 11.2 0.8 10.5 0.8 9.6C0.8 5.5 4 2.2 8 2.2ZM4.35 10.7C5.3 7.15 8.05 4.5 11.75 3.85C9.15 5.75 7.2 8.4 6.2 11.45C5.6 10.95 4.95 10.7 4.35 10.7Z"
-                            />
-                        </g>
-                    </svg>
+                    <img src="assets/omelette.png" alt="" />
                     Omelette
                 </a>
                 <nav>

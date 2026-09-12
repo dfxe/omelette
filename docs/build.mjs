@@ -483,12 +483,13 @@ async function build() {
     // site after it has stopped being referenced.
     await rm(SITE, { recursive: true, force: true });
     await mkdir(join(SITE, 'shots'), { recursive: true });
+    await mkdir(join(SITE, 'assets'), { recursive: true });
     await writeFile(join(SITE, 'index.html'), page);
     for (const shot of SHOT_LIST) {
         await copyFile(join(SHOTS, `${shot.name}.png`), join(SITE, 'shots', `${shot.name}.png`));
     }
-
-    console.log(`  site  docs/_site/index.html  (+ ${SHOT_LIST.length} images)`);
+    await copyFile(join(DOCS, 'assets', 'omelette.png'), join(SITE, 'assets', 'omelette.png'));
+    console.log(`  site  docs/_site/index.html  (+ ${SHOT_LIST.length} images, 1 app icon)`);
 
     await checkFontFloor();
 }
