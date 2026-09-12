@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Omelette
+Comment=Clipboard, screenshots, tools and local dictation
+Exec=gnome-extensions prefs omelette@dfxe.github.io
+Icon=omelette
+Terminal=false
+Categories=Utility;GNOME;
+Keywords=clipboard;screenshot;dictation;voice;snippets;
+StartupNotify=true
+NoDisplay=false

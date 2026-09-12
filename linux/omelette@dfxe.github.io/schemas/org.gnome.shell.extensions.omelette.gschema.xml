@@ -109,6 +109,24 @@
       <description>Seconds between fan readings, and only while the popup is open. Bluetooth batteries are not polled at all — BlueZ signals a change when there is one. Raise this if reading the fan wakes the CPU more than you would like.</description>
     </key>
 
+    <key name="awake" type="b">
+      <default>false</default>
+      <summary>Keep the session awake</summary>
+      <description>When on, an inhibitor is held against gnome-session so the screen does not blank and the machine does not suspend. This setting is the single source of truth for the feature: the popup toggle, the shortcut, the command bar and this window all write it, and one handler reconciles the inhibitor.</description>
+    </key>
+
+    <key name="awake-until" type="x">
+      <default>0</default>
+      <summary>When to stop keeping the session awake</summary>
+      <description>Absolute unix time in seconds, or 0 to keep going until switched off. Absolute rather than a remaining duration because locking the screen disables the extension and stops any timer, and timers do not advance across a suspend — a wall-clock deadline is still correct after either, so re-enabling simply compares it against the clock.</description>
+    </key>
+
+    <key name="edit-after-capture" type="b">
+      <default>false</default>
+      <summary>Open the editor after a capture</summary>
+      <description>When on, an Area or Screen capture opens in the annotation editor as well as landing in history and on the clipboard. Off by default: a window appearing after every capture is unwelcome if all you wanted was to paste it.</description>
+    </key>
+
     <key name="auto-paste" type="b">
       <default>true</default>
       <summary>Paste after copying</summary>
@@ -180,6 +198,30 @@
       <default>[]</default>
       <summary>Open the PDF page extractor</summary>
       <description>Keyboard shortcut that opens the popup ready to pick a PDF and pull out a page or a range.</description>
+    </key>
+
+    <key name="toggle-awake" type="as">
+      <default>[]</default>
+      <summary>Keep the session awake</summary>
+      <description>Keyboard shortcut that turns Keep awake on or off.</description>
+    </key>
+
+    <key name="open-editor" type="as">
+      <default>[]</default>
+      <summary>Edit the newest screenshot</summary>
+      <description>Keyboard shortcut that opens the most recent screenshot in the annotation editor.</description>
+    </key>
+
+    <key name="voce-hold" type="as">
+      <default>['&lt;Super&gt;&lt;Alt&gt;space']</default>
+      <summary>Hold to dictate</summary>
+      <description>Hold this shortcut while speaking; release it to transcribe with the optional local Voce service.</description>
+    </key>
+
+    <key name="voce-toggle" type="as">
+      <default>['&lt;Super&gt;&lt;Alt&gt;d']</default>
+      <summary>Toggle dictation</summary>
+      <description>Start or stop dictation with the optional local Voce service.</description>
     </key>
 
   </schema>

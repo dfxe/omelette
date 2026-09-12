@@ -19,6 +19,11 @@ import './searchRegistry.test.js';
 import './sensors.test.js';
 import './pdfExtract.test.js';
 import './pdfProvider.test.js';
+import './awake.test.js';
+import './awakeProvider.test.js';
+import './editShapes.test.js';
+import './editPalette.test.js';
+import './editExport.test.js';
 import './dataDir.test.js';
 import './vaultStore.test.js';
 

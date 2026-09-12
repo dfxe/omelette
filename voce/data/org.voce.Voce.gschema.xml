@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.voce.Voce" path="/org/voce/Voce/">
+    <key name="window-width" type="i"><default>680</default></key>
+    <key name="window-height" type="i"><default>720</default></key>
+  </schema>
+</schemalist>
+

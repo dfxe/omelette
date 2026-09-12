@@ -29,26 +29,17 @@
  * value can never override a literal that already resolved. */
 
 .cb-thumb {
-    border-radius: 4px;
+    border-radius: 6px;
     margin-right: 12px;
-    /* Image thumbnails are tilted (see Indicator._mountOnPaper), and a rotation
-       does not grow the actor's allocation — 1.5° on 64px overhangs by roughly
-       2px, which would otherwise clip the row above. */
     margin-top: 2px;
     margin-bottom: 2px;
 }
 
-/* A strip of tape across the top-left corner of an image thumbnail. Neutral
-   grey at low alpha, per convention 2 above: the previous warm off-white
-   (rgba(244,236,216,.5)) only ever showed up on a dark theme — over a #FAFAFA
-   popup it was invisible, so the one paper flourish in the row existed in dark
-   mode alone. Grey is duller in dark than the off-white was, and present in
-   both, which is the better trade for a decoration. */
-.cb-tape {
-    width: 30px;
-    height: 9px;
-    background-color: rgba(128, 128, 128, 0.45);
-    border-radius: 1px;
+/* Image files use St.Icon's proportional fit, with only a neutral frame. There
+   is deliberately no clipping, rotation or decoration over the pixels. */
+.cb-image-thumb {
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    background-color: rgba(128, 128, 128, 0.08);
 }
 
 .cb-meta {
@@ -225,6 +216,18 @@
     color: -st-accent-color;
 }
 
+/* Keep awake is shown as a glow around the full-colour panel icon.
+   A literal glow is used on GNOME 45/46; on 47+ .cb-accent follows the user
+   accent colour. The accessible name in _syncAwakeIcon provides the same state
+   non-visually. */
+.cb-awake {
+    icon-shadow: 0 0 4px #f6d32d;
+}
+
+.cb-accent .cb-awake {
+    icon-shadow: 0 0 4px -st-accent-color;
+}
+
 /* Live readout that follows the pointer during a colour pick. This one
    deliberately breaks the `color: inherit` rule above: that exists so text
    inside the themed popup survives a light theme, but this floats over arbitrary
@@ -393,3 +396,157 @@
     height: 32px;
     border: 1px solid rgba(128, 128, 128, 0.55);
 }
+.cb-voce-overlay {
+    spacing: 10px;
+    padding: 12px 18px;
+    border-radius: 24px;
+    background-color: rgba(24, 24, 27, 0.94);
+    color: white;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.cb-voce-overlay-icon {
+    color: #ff7b63;
+    icon-size: 20px;
+}
+
+.cb-voce-visualizer {
+    spacing: 3px;
+    height: 20px;
+}
+
+.cb-voce-bar {
+    width: 3px;
+    min-height: 4px;
+    border-radius: 2px;
+    background-color: #9a9996;
+}
+
+.cb-voce-overlay.cb-recording .cb-voce-bar {
+    background-color: #ff7b63;
+}
+
+.cb-voce-btn:checked {
+    color: #ff7b63;
+}
+
+
+/* Native-warm polish. The Shell owns the popup surface; warmth is reserved for
+   focus, selection and state. */
+.cb-menu { padding: 6px; }
+.cb-menu.cb-dark { color: #f7f2ed; }
+.cb-menu.cb-light { color: #241f1c; }
+
+.cb-search {
+    min-width: 440px;
+    margin: 2px 0 6px;
+    padding: 8px 11px;
+    border: 2px solid rgba(128, 128, 128, 0.34);
+    border-radius: 9px;
+    background-color: rgba(128, 128, 128, 0.09);
+    selection-background-color: #9a3418;
+    selected-color: #ffffff;
+}
+.cb-search:focus {
+    border-color: #e86a3d;
+    background-color: rgba(232, 106, 61, 0.06);
+}
+.cb-accent .cb-search:focus { border-color: -st-accent-color; }
+.cb-menu.cb-dark .cb-search { color: #f7f2ed; hint-text-color: #bdb5ad; }
+.cb-menu.cb-light .cb-search { color: #241f1c; hint-text-color: #59514b; }
+
+.cb-btn-row { spacing: 6px; margin-bottom: 3px; }
+.cb-button-content { spacing: 6px; }
+.cb-capture-btn,
+.cb-pick-btn {
+    border: 1px solid rgba(128, 128, 128, 0.22);
+    border-radius: 8px;
+    background-color: rgba(128, 128, 128, 0.08);
+    transition-duration: 120ms;
+}
+.cb-capture-btn { padding: 7px 12px; }
+.cb-pick-btn { padding: 7px; }
+.cb-capture-btn:hover,
+.cb-capture-btn:focus,
+.cb-pick-btn:hover,
+.cb-pick-btn:focus {
+    border-color: rgba(232, 106, 61, 0.52);
+    background-color: rgba(232, 106, 61, 0.12);
+}
+.cb-voce-btn:checked {
+    border-color: #e86a3d;
+    background-color: rgba(232, 106, 61, 0.16);
+    color: #e86a3d;
+}
+
+.cb-status-item { margin: 1px 0; border-radius: 8px; }
+.cb-scroll { min-width: 440px; }
+.cb-section StLabel {
+    font-size: 0.78em;
+    letter-spacing: 0.03em;
+    opacity: 1;
+}
+.cb-menu.cb-dark .cb-section StLabel { color: #d9b46b; }
+.cb-menu.cb-light .cb-section StLabel { color: #6a4b16; }
+
+.cb-item {
+    border-left: 2px solid transparent;
+    border-radius: 8px;
+    transition-duration: 160ms;
+}
+.cb-item:hover { background-color: rgba(128, 128, 128, 0.12); }
+.cb-item.cb-selected {
+    border-left-color: #e86a3d;
+    background-color: rgba(232, 106, 61, 0.14);
+}
+.cb-accent .cb-item.cb-selected { border-left-color: -st-accent-color; }
+.cb-item.cb-copied {
+    border-left-color: #d99b28;
+    background-color: rgba(242, 184, 75, 0.22);
+}
+
+.cb-row-btn { border-radius: 6px; }
+.cb-row-btn:hover,
+.cb-row-btn:focus { background-color: rgba(128, 128, 128, 0.20); }
+.cb-row-btn.cb-pinned,
+.cb-hint-ok { color: #d99b28; opacity: 1; }
+
+.cb-footer-item { border-radius: 8px; }
+.cb-footer-item:hover,
+.cb-footer-item:focus { background-color: rgba(128, 128, 128, 0.12); }
+
+.cb-menu.cb-dark .cb-hint,
+.cb-menu.cb-dark .cb-panel-caption,
+.cb-menu.cb-dark .cb-fan-icon,
+.cb-menu.cb-dark .cb-fan-rpm,
+.cb-menu.cb-dark .cb-pdf-label,
+.cb-menu.cb-dark .cb-pdf-file,
+.cb-menu.cb-dark .cb-pdf-status,
+.cb-menu.cb-dark .cb-footer-item {
+    color: #d4cdc6;
+    opacity: 1;
+}
+.cb-menu.cb-dark .cb-accel,
+.cb-menu.cb-dark .cb-pdf-dim,
+.cb-menu.cb-dark .cb-row-btn {
+    color: #bdb5ad;
+    opacity: 1;
+}
+.cb-menu.cb-light .cb-hint,
+.cb-menu.cb-light .cb-panel-caption,
+.cb-menu.cb-light .cb-fan-icon,
+.cb-menu.cb-light .cb-fan-rpm,
+.cb-menu.cb-light .cb-pdf-label,
+.cb-menu.cb-light .cb-pdf-file,
+.cb-menu.cb-light .cb-pdf-status,
+.cb-menu.cb-light .cb-footer-item,
+.cb-menu.cb-light .cb-accel,
+.cb-menu.cb-light .cb-pdf-dim,
+.cb-menu.cb-light .cb-row-btn {
+    color: #59514b;
+    opacity: 1;
+}
+.cb-menu.cb-dark .cb-status-item,
+.cb-menu.cb-dark .cb-item { color: #f7f2ed; }
+.cb-menu.cb-light .cb-status-item,
+.cb-menu.cb-light .cb-item { color: #241f1c; }

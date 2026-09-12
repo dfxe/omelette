@@ -23,20 +23,24 @@
         />
         <meta property="og:image" content="shots/gnome-command-bar.png" />
         <meta property="og:type" content="website" />
-        <!-- The header mark flattened for 16px. Three deliberate changes: the
-             second sheet is dropped (noise at that size), the whole clipboard
-             moves inside the tile, and the tile is filled with the accent rather
-             than left as an outline.
-             That last one is the load-bearing part. A browser tab is light in
-             one theme and dark in the other, so the icon cannot borrow contrast
-             from its background — the first attempt here was a #2c2c2c tile and
-             it disappeared entirely on a dark tab. A saturated fill reads
+        <!-- The omelette mark on a filled tile — the same two colours as the
+             editor's application icon, so a tab, the app and the top bar all
+             read as one thing.
+             The tile being *filled* is the load-bearing part. A browser tab is
+             light in one theme and dark in the other, so the icon cannot borrow
+             contrast from its background — an earlier outline-on-#2c2c2c
+             version disappeared entirely on a dark tab. A saturated fill reads
              against both.
+             The path is the 16px grid from
+             linux/omelette@dfxe.github.io/icons/omelette-symbolic.svg, scaled
+             and centred by the transform rather than redrawn, so the two cannot
+             drift. The fold is an evenodd hole, which lets the blue show
+             through instead of needing a third colour.
              Every # must be %23 or it terminates the URL as a fragment and the
              icon silently fails to load. -->
         <link
             rel="icon"
-            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a86cf'/%3E%3Crect x='12' y='6' width='8' height='4.5' rx='1.5' fill='%23fff'/%3E%3Cpath d='M9 17h14M9 22h9' stroke='%23fff' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a86cf'/%3E%3Cg transform='translate(2.78 3.52) scale(1.65)'%3E%3Cpath fill='%23f6d32d' fill-rule='evenodd' d='M8 2.2C12 2.2 15.2 5.5 15.2 9.6C15.2 10.5 14.95 11.2 14.5 11.75C14.05 12.3 13.25 12.5 12.6 12.2C11.6 12.95 10.53 12.95 9.53 12.2C8.53 12.95 7.47 12.95 6.47 12.2C5.47 12.95 4.4 12.95 3.4 12.2C2.75 12.5 1.95 12.3 1.5 11.75C1.05 11.2 0.8 10.5 0.8 9.6C0.8 5.5 4 2.2 8 2.2ZM4.35 10.7C5.3 7.15 8.05 4.5 11.75 3.85C9.15 5.75 7.2 8.4 6.2 11.45C5.6 10.95 4.95 10.7 4.35 10.7Z'/%3E%3C/g%3E%3C/svg%3E"
         />
         <style>
             *,
@@ -358,39 +362,23 @@
         <div class="shell">
             <header class="topbar micro">
                 <a class="brand" href="./">
-                    <!-- A board with a second sheet behind it: keeping more than
-                         one is the whole point. Only the visible arc of the back
-                         sheet is drawn, so the stack needs nothing painted over
-                         it; the single fill knocks the front board out against
-                         --mark-bg. Shared with the dfxe.github.io utils listing;
-                         the favicon is a flattened version of the same shape. -->
-                    <svg
-                        viewBox="0 0 32 32"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                    >
-                        <path
-                            opacity=".45"
-                            d="M9 6.5A3 3 0 0 1 12 3.5H25A3 3 0 0 1 28 6.5V21.5A3 3 0 0 1 25 24.5H23"
-                        />
-                        <rect
-                            x="4"
-                            y="7"
-                            width="19"
-                            height="21"
-                            rx="3"
-                            style="fill: var(--mark-bg, #222)"
-                        />
-                        <path d="M8.5 15h10M8.5 19.5h7" />
-                        <path
-                            fill="#4a86cf"
-                            stroke="#4a86cf"
-                            d="M9.5 9V5.5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2V9z"
-                        />
+                    <!-- A folded omelette. The source of truth for this shape is
+                         linux/omelette@dfxe.github.io/icons/omelette-symbolic.svg
+                         — the path below is that file's 16px grid, positioned by
+                         the transform rather than redrawn, so editing the mark
+                         means editing it in both places and nowhere else.
+                         The fold is an evenodd hole rather than a second shape,
+                         so the page background shows through and the mark stays
+                         one colour. That also retires the --mark-bg knockout the
+                         old clipboard needed: nothing here overlaps. -->
+                    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                        <g transform="translate(2.78 3.52) scale(1.65)">
+                            <path
+                                fill="#f6d32d"
+                                fill-rule="evenodd"
+                                d="M8 2.2C12 2.2 15.2 5.5 15.2 9.6C15.2 10.5 14.95 11.2 14.5 11.75C14.05 12.3 13.25 12.5 12.6 12.2C11.6 12.95 10.53 12.95 9.53 12.2C8.53 12.95 7.47 12.95 6.47 12.2C5.47 12.95 4.4 12.95 3.4 12.2C2.75 12.5 1.95 12.3 1.5 11.75C1.05 11.2 0.8 10.5 0.8 9.6C0.8 5.5 4 2.2 8 2.2ZM4.35 10.7C5.3 7.15 8.05 4.5 11.75 3.85C9.15 5.75 7.2 8.4 6.2 11.45C5.6 10.95 4.95 10.7 4.35 10.7Z"
+                            />
+                        </g>
                     </svg>
                     Omelette
                 </a>

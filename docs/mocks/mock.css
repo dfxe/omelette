@@ -7,17 +7,15 @@
  * macos/Omelette/PopoverView.swift for the popover — so a change to either
  * has one obvious place to land here. The values that came across:
  *
- *   .cb-item       9px 12px padding      .cb-thumb   4px radius, 12px margin
- *   .cb-hint       opacity 0.7           .cb-accel   opacity 0.55
- *   .cb-selected   rgba(128,128,128,.3)  .cb-swatch  32px, grey 0.55 border
- *   .cb-answer     monospace, 1.25em     .cb-scroll  min-width 420px
- *   .cb-tape       rgba(128,128,128,.45) .cb-section 0.8em bold, opacity 0.55
+ *   .cb-item       9px 12px padding      .cb-thumb   6px radius, 12px margin
+ *   .cb-hint       secondary text        .cb-accel   tertiary text
+ *   .cb-selected   coral edge + tint     .cb-swatch  32px, grey 0.55 border
+ *   .cb-answer     monospace, 1.25em     .cb-scroll  min-width 440px
+ *   .cb-image      proportional, framed .cb-section 0.78em, subtle warm text
  *   popover        frame(width: 620), padding 14, rows 8 apart
  *
- * The extension builds its text hierarchy from three opacity steps — 1 primary,
- * 0.7 secondary, 0.55 tertiary — rather than ad-hoc values, because dimming
- * costs far more contrast on a light theme than a dark one. The .hint / .accel
- * / .section values below are those steps, not independent choices.
+ * Production resolves secondary and tertiary text to explicit accessible
+ * colours in light and dark mode; this replica renders the dark-mode result.
  *
  * Fonts: Cantarell is GNOME's UI font and Inter stands in for SF Pro, which
  * exists on neither this machine nor a CI runner. Both are pinned rather than
@@ -99,6 +97,18 @@ body {
     -webkit-mask-image: var(--i-clipboard);
     mask-image: var(--i-clipboard);
 }
+.i-omelette {
+    -webkit-mask-image: var(--i-omelette);
+    mask-image: var(--i-omelette);
+}
+.i-color {
+    -webkit-mask-image: var(--i-color);
+    mask-image: var(--i-color);
+}
+.i-mic {
+    -webkit-mask-image: var(--i-mic);
+    mask-image: var(--i-mic);
+}
 .i-tray {
     -webkit-mask-image: var(--i-tray);
     mask-image: var(--i-tray);
@@ -134,6 +144,9 @@ body {
     --i-snippet: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><path d='M4.1 4.2h7.8'/><path d='M8 4.2v7.6'/><path d='M6.3 11.8h3.4'/></svg>");
     --i-search: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'><circle cx='6.9' cy='6.9' r='4.2'/><path d='M10.1 10.1 13.5 13.5'/></svg>");
     --i-clipboard: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><rect x='6' y='1.9' width='4' height='2.2' rx='.6'/><path d='M6 3.5H4.5a1 1 0 0 0-1 1v8.6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V4.5a1 1 0 0 0-1-1H10'/></svg>");
+    --i-omelette: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' fill-rule='evenodd' d='M8 1.75C12.05 1.75 15.25 4.95 15.25 9 15.25 11.95 12.95 14.25 10 14.25H6C3.05 14.25.75 11.95.75 9 .75 4.95 3.95 1.75 8 1.75ZM4.15 11.75C5.35 7.9 8.15 5.05 12.15 4.05 9.35 6.05 7.55 8.65 6.7 11.75Z'/></svg>");
+    --i-color: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><path d='m10.8 2.2 3 3-7.6 7.6-3.5.5.5-3.5z'/><path d='m9.5 3.5 3 3'/></svg>");
+    --i-mic: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'><rect x='5.5' y='1.8' width='5' height='8.2' rx='2.5'/><path d='M3.5 7.8a4.5 4.5 0 0 0 9 0M8 12.3v2'/></svg>");
     --i-tray: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><path d='M2.4 9.4 4.2 3.9h7.6l1.8 5.5v2.4a1 1 0 0 1-1 1H3.4a1 1 0 0 1-1-1z'/><path d='M2.4 9.4h3.1l.7 1.5h3.6l.7-1.5h3.1'/></svg>");
     --i-camera: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><path d='M2.4 5.7V3.5a1 1 0 0 1 1-1h2.2M10.4 2.5h2.2a1 1 0 0 1 1 1v2.2M13.6 10.3v2.2a1 1 0 0 1-1 1h-2.2M5.6 13.5H3.4a1 1 0 0 1-1-1v-2.2'/><circle cx='8' cy='8' r='2.3'/></svg>");
     --i-display: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='3' width='12' height='8' rx='1.2'/><path d='M6 13.5h4'/></svg>");
@@ -376,42 +389,17 @@ body {
     opacity: 1;
 }
 
-/* An image entry shows the picture itself (gicon at size 64, drawn into the
-   32px thumb footprint). Faked with a gradient — a real thumbnail would mean
-   shipping a sample image just to have something to photograph. */
+/* An image entry shows the complete picture inside a clean landscape frame.
+   A gradient stands in for sample pixels without shipping private content. */
 .thumb.shot {
-    position: relative;
+    width: 56px;
+    height: 40px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 6px;
     background:
         linear-gradient(150deg, #6c8ebf 0%, #3d5a80 48%, #22303f 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
     opacity: 1;
-    /* Indicator._mountOnPaper. In the extension this is Clutter geometry, since
-       St's CSS has neither transform nor ::before; here it can be plain CSS.
-       The extension picks the sign from a hash of the image path, so the two
-       directions have to be spelled out by hand — .tilt-b is the other one. */
-    transform: rotate(1.5deg);
-}
-
-.thumb.shot.tilt-b {
-    transform: rotate(-1.5deg);
-}
-
-/* .cb-tape: a strip across the top-left corner, neutral grey at low alpha so it
-   reads on a light theme as well as a dark one. It was warm off-white until the
-   restyle, which only ever showed up against a dark popup.
-   Sized against this 32px tile rather than copying the extension's 30×9, which
-   is measured against its 64px gicon — the same strip at 32px stops reading as
-   tape and starts reading as a chamfered corner. */
-.thumb.shot::before {
-    position: absolute;
-    top: 2px;
-    left: -4px;
-    width: 16px;
-    height: 5px;
-    border-radius: 1px;
-    background: rgba(128, 128, 128, 0.45);
-    content: "";
-    transform: rotate(-45deg);
 }
 
 .meta {
@@ -751,4 +739,81 @@ body {
     padding: 3px 4px;
     color: #0a63cf;
     font-size: 11.5px;
+}
+
+
+/* Native-warm polish layered over the platform replicas. */
+.popup {
+    width: 486px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: #2c2c2c;
+}
+.popup-arrow { border-bottom-color: #2c2c2c; }
+.search {
+    margin: 2px 2px 6px;
+    padding: 8px 11px;
+    border-color: #e86a3d;
+    border-radius: 9px;
+    background: rgba(232, 106, 61, 0.06);
+}
+.capture-row { gap: 6px; padding: 0 2px 6px; }
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+}
+.btn .i {
+    width: 16px;
+    height: 16px;
+}
+.btn.tool-btn { flex: 0 0 auto; padding-inline: 9px; }
+.switch-row { margin: 1px 0; }
+.section {
+    color: #d9b46b;
+    font-size: 11.5px;
+    opacity: 1;
+    letter-spacing: 0.03em;
+}
+.row { border-left: 2px solid transparent; border-radius: 8px; }
+.row.is-selected {
+    border-left-color: #e86a3d;
+    background: rgba(232, 106, 61, 0.14);
+}
+.row-btn.is-pinned { color: #d99b28; opacity: 1; }
+
+.macos {
+    background: linear-gradient(155deg, #d8c5b5 0%, #b99f8b 55%, #8b7464 100%);
+}
+.popover { background: #f7f3ec; }
+.pop-title { color: #e86a3d; font-size: 17px; }
+.pop-count {
+    padding: 4px 9px;
+    border-radius: 99px;
+    background: rgba(242, 184, 75, 0.22);
+}
+.mac-row {
+    border-color: rgba(232, 106, 61, 0.16);
+    border-radius: 12px;
+    background: rgba(242, 184, 75, 0.08);
+}
+.mac-preview {
+    width: 84px;
+    height: 60px;
+    border-color: rgba(232, 106, 61, 0.16);
+    border-radius: 9px;
+}
+.mac-preview.shot::before { background: rgba(242, 184, 75, 0.62); }
+.pop-foot {
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(242, 184, 75, 0.10);
+}
+.mac-btn.area {
+    border-color: #e86a3d;
+    background: #e86a3d;
+    color: #fff9f0;
 }

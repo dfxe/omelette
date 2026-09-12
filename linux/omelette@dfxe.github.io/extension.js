@@ -23,6 +23,9 @@ import * as Currency from './currency.js';
 import * as Sensors from './sensors.js';
 import * as PdfRunner from './pdfRunner.js';
 import * as FilePortal from './filePortal.js';
+import * as Awake from './awake.js';
+import * as EditorLauncher from './editorLauncher.js';
+import * as Voce from './voce.js';
 import { makeRing } from './gauge.js';
 import { buildSensorsPanel } from './sensorsPanel.js';
 import { buildPdfPanel } from './pdfPanel.js';
@@ -35,14 +38,17 @@ import { snippetProvider } from './snippetProvider.js';
 import { emojiProvider } from './emojiProvider.js';
 import { sensorsProvider } from './sensorsProvider.js';
 import { pdfProvider } from './pdfProvider.js';
+import { awakeProvider } from './awakeProvider.js';
+import { editProvider } from './editProvider.js';
 import {
     seedQuicklinksOnce, loadSnippets, saveSnippets, loadQuicklinks, newId,
 } from './configStore.js';
-import { ingestText } from './clipboardUtil.js';
+import { ingestText, copyPngFile } from './clipboardUtil.js';
 
 const KEYBINDINGS = [
     'toggle-menu', 'capture-area', 'capture-full', 'pick-color',
     'open-snippets', 'open-emoji', 'open-sensors', 'open-pdf',
+    'toggle-awake', 'open-editor', 'voce-hold', 'voce-toggle',
 ];
 
 // Search sources, in the order their sections appear in the popup. The tools
@@ -56,7 +62,9 @@ const PROVIDERS = [
     snippetProvider,
     emojiProvider,
     sensorsProvider,
+    awakeProvider,
     pdfProvider,
+    editProvider,
     historyProvider,
     screenshotProvider,
 ];
@@ -89,6 +97,8 @@ const SCOPE_HINTS = {
     emoji: 'Search emoji and symbols…',
     sensors: 'Search devices and fans…',
     pdf: 'Pick a PDF, then a page range…',
+    awake: 'Keep the screen awake for…',
+    edit: 'Pick an image to annotate…',
 };
 
 // Scopes that open into a panel instead of a list of rows. A table for the same
@@ -107,18 +117,6 @@ const PANELS = {
     pdf: (ctx, indicator) => indicator._buildPdfPanel(),
 };
 
-// Image thumbnails sit a degree or two off square, the way a photo dropped on a
-// desk does. The angle has to be a pure function of the image, never random:
-// _refresh rebuilds every row on every keystroke, so a fresh angle per rebuild
-// would set the whole list twitching while you type.
-const TILT_DEGREES = 1.5;
-
-function stableTilt(key) {
-    let hash = 0;
-    for (let i = 0; i < key.length; i++)
-        hash = (Math.imul(hash, 31) + key.charCodeAt(i)) | 0;
-    return (hash & 1) ? TILT_DEGREES : -TILT_DEGREES;
-}
 
 function revealInFiles(path) {
     try {
@@ -211,6 +209,23 @@ function iconButton(iconName, styleClass, onClick) {
     return btn;
 }
 
+// A native symbolic icon and label for the two primary capture actions. Keeping
+// this as a real actor tree (rather than a Unicode glyph in the label) lets the
+// Shell theme recolour the whole button and keeps the text accessible.
+function labelledButtonContent(iconName, label) {
+    const box = new St.BoxLayout({
+        style_class: 'cb-button-content',
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    box.add_child(new St.Icon({ icon_name: iconName, icon_size: 16 }));
+    box.add_child(new St.Label({
+        text: label,
+        y_align: Clutter.ActorAlign.CENTER,
+    }));
+    return box;
+}
+
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
     _init() {
@@ -226,6 +241,7 @@ class Indicator extends PanelMenu.Button {
         this._listSection = null;
         this._searchEntry = null;
         this._capturedId = 0;
+        this._focusIdleId = 0;
         this._pauseToggle = null;
         this._clearItem = null;
         this._revealItem = null;
@@ -269,10 +285,15 @@ class Indicator extends PanelMenu.Button {
             pages: '', error: '', missing: [],
         };
 
-        this.add_child(new St.Icon({
+        // The mark is a file shipped with the extension rather than a stock
+        // icon name, so it needs the extension's path — which arrives with
+        // setContext(). Start on the stock icon so the panel is never empty if
+        // that call never comes, or if the file has gone missing.
+        this._panelIcon = new St.Icon({
             icon_name: 'edit-paste-symbolic',
             style_class: 'system-status-icon',
-        }));
+        });
+        this.add_child(this._panelIcon);
 
         // Command-bar keys have to be caught here rather than on the search
         // entry, because PopupMenuManager connects its own 'captured-event' to
@@ -301,9 +322,14 @@ class Indicator extends PanelMenu.Button {
                 // scoped session would still be showing that tool's rows.
                 this.refresh({ resetSelection: true });
                 this._syncScrollHeight();
-                // Focus the search box so you can filter by just typing.
+                // Take focus now, then once more after PopupMenuManager has
+                // completed this open signal. Some Shell versions assign their
+                // default menu focus later in the same turn, stealing the first
+                // grab when the panel icon itself opened the popup.
                 this._focusInput();
+                this._queueFocusInput();
             } else {
+                this._cancelFocusInput();
                 // Drop any in-flight copy flash, so a row we closed on early
                 // isn't still lit up the next time the popup opens.
                 this._cancelFlash();
@@ -368,7 +394,25 @@ class Indicator extends PanelMenu.Button {
     // inside refresh(); taking it back here would undo that a frame later.
     _focusInput() {
         if (this._panelHold) return;
-        this._searchEntry?.grab_key_focus();
+        // Target the editable ClutterText directly. Focusing the St.Entry
+        // wrapper is theme/version-dependent and can leave the caret inactive.
+        this._searchEntry?.clutter_text.grab_key_focus();
+    }
+
+    _queueFocusInput() {
+        this._cancelFocusInput();
+        this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._focusIdleId = 0;
+            if (!this._destroyed && this.menu.isOpen)
+                this._focusInput();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _cancelFocusInput() {
+        if (!this._focusIdleId) return;
+        GLib.source_remove(this._focusIdleId);
+        this._focusIdleId = 0;
     }
 
     _releasePanel() {
@@ -499,7 +543,48 @@ class Indicator extends PanelMenu.Button {
             // A thunk, like rates and sensors: this walks PATH, and the context
             // is rebuilt on every keystroke. Cached inside pdfRunner.
             pdfMissing: () => PdfRunner.missingTools(),
+            // Same shape, same reason — cached inside editorLauncher.
+            editorMissing: () => EditorLauncher.missingTools(),
+            // Closes the popup itself; see _openEditor for why a row cannot do
+            // that by returning { close: true }.
+            openEditor: path => this._openEditor(path),
         };
+    }
+
+    // Open an image in omelette-edit.
+    //
+    // The popup is closed *first*, and here rather than by the caller, for two
+    // reasons. While the popup holds its modal grab a new window appears but
+    // never receives a click — filePortal.js documents the same trap, and
+    // _browsePdf closes for the same reason. And a row *action* cannot close
+    // the popup on its own: the action handler in _makeResultRow only acts on
+    // `outcome.message`, so a `{ close: true }` returned from one is dropped.
+    _openEditor(path) {
+        this.menu.close(BoxPointer.PopupAnimation.FULL);
+
+        EditorLauncher.open(path, {
+            extensionPath: this._path,
+            outDir: this._captureDir(),
+        }, {
+            onReport: (kind, saved) => this._onEditorSaved(kind, saved),
+            onError: e => {
+                if (this._destroyed) return;
+                Main.notifyError('Omelette', e.message ?? String(e));
+            },
+        });
+    }
+
+    // The editor finished writing a file. It saves into the screenshots folder,
+    // which the ScreenshotStore already watches, so `saved` needs nothing doing
+    // — the row appears on its own.
+    //
+    // `copy` is the case the editor cannot handle itself: on X11 clipboard
+    // ownership dies with the process that took it, and closing the editor
+    // would empty the clipboard. gnome-shell does not exit, so it owns the
+    // write, through the one routine that also tells the monitor to ignore it.
+    _onEditorSaved(kind, path) {
+        if (this._destroyed || kind !== 'copy') return;
+        copyPngFile(path, this._monitor);
     }
 
     // Promote a history entry to a snippet. Deliberately unlabelled and without
@@ -539,17 +624,43 @@ class Indicator extends PanelMenu.Button {
         });
     }
 
-    setContext({ vault, screenshots, monitor, settings, uuid, version, openPreferences }) {
+    setContext({ vault, screenshots, monitor, settings, uuid, version, path, openPreferences }) {
         this._vault = vault;
         this._screenshots = screenshots;
         this._monitor = monitor;
         this._settings = settings;
         this._uuid = uuid;
         this._version = version ?? '';
+        // Needed to find both the editor script and the icons directory, and
+        // only the Extension object knows where it was installed.
+        this._path = path ?? null;
         // Opening the prefs window is an Extension method, and the Indicator has
         // no handle on the Extension — so it arrives as a thunk.
         this._openPreferences = openPreferences ?? null;
+        this._applyPanelIcon();
         this._buildMenu();
+    }
+
+    // Swap the stock icon for the omelette mark now that we know where it is.
+    //
+    // The panel-specific artwork keeps the skillet light against a dark bar;
+    // the detailed launcher icon loses its dark pan when reduced to 16 px.
+    _applyPanelIcon() {
+        if (!this._path) return;
+        const file = GLib.build_filenamev([this._path, 'icons', 'omelette-panel-v2.svg']);
+        if (!GLib.file_test(file, GLib.FileTest.EXISTS)) return;
+        this._panelIcon.set_gicon(Gio.icon_new_for_string(file));
+    }
+
+    // Reflect Keep awake in the top bar. A glow rather than a different icon,
+    // so the mark stays the extension's identity either way — and an
+    // accessible_name alongside it, because a visual change alone says nothing
+    // to a screen reader.
+    _syncAwakeIcon() {
+        const on = this._settings?.get_boolean('awake') ?? false;
+        if (on) this._panelIcon.add_style_class_name('cb-awake');
+        else this._panelIcon.remove_style_class_name('cb-awake');
+        this.set_accessible_name(on ? 'Omelette — keeping awake' : 'Omelette');
     }
 
     // Build the persistent popup chrome once. Only the middle list is rebuilt on
@@ -557,6 +668,16 @@ class Indicator extends PanelMenu.Button {
     // text across rebuilds.
     _buildMenu() {
         this.menu.removeAll();
+
+        this.menu.box.add_style_class_name('cb-menu');
+        if (!this._appearanceSettings) {
+            this._appearanceSettings = new Gio.Settings({
+                schema_id: 'org.gnome.desktop.interface',
+            });
+            this._appearanceChangedId = this._appearanceSettings.connect(
+                'changed::color-scheme', () => this._syncAppearance());
+        }
+        this._syncAppearance();
 
         // Gates every -st-accent-color rule in the stylesheet on one ancestor
         // class, so on a Shell that never heard of the keyword those selectors
@@ -567,11 +688,12 @@ class Indicator extends PanelMenu.Button {
         if (accentColorSupported())
             this.menu.box.add_style_class_name('cb-accent');
 
-        this.menu.addMenuItem(this._makeCaptureRow());
         this.menu.addMenuItem(this._makeSearchRow());
+        this.menu.addMenuItem(this._makeCaptureRow());
 
         this._pauseToggle = new PopupMenu.PopupSwitchMenuItem('Pause monitoring',
             this._settings ? this._settings.get_boolean('paused') : false);
+        this._pauseToggle.add_style_class_name('cb-status-item');
         this._pauseToggle.connect('toggled', (_i, state) =>
             this._settings?.set_boolean('paused', state));
         if (this._settings) {
@@ -579,6 +701,28 @@ class Indicator extends PanelMenu.Button {
                 this._pauseToggle.setToggleState(this._settings.get_boolean('paused')));
         }
         this.menu.addMenuItem(this._pauseToggle);
+
+        // Writes the setting and stops. Everything about the inhibitor itself —
+        // acquiring it, the deadline, releasing it — is reconciled by one
+        // `changed::awake` handler in enable(), so this switch, the shortcut,
+        // the command-bar rows and the preferences window cannot disagree.
+        this._awakeToggle = new PopupMenu.PopupSwitchMenuItem('Keep awake',
+            this._settings ? this._settings.get_boolean('awake') : false);
+        this._awakeToggle.add_style_class_name('cb-status-item');
+        this._awakeToggle.connect('toggled', (_i, state) => {
+            // Clear any deadline: the switch means "until I turn it off".
+            // Leaving a stale one would expire the new hold immediately.
+            this._settings?.set_int64('awake-until', 0);
+            this._settings?.set_boolean('awake', state);
+        });
+        if (this._settings) {
+            this._awakeChangedId = this._settings.connect('changed::awake', () => {
+                this._awakeToggle.setToggleState(this._settings.get_boolean('awake'));
+                this._syncAwakeIcon();
+            });
+        }
+        this.menu.addMenuItem(this._awakeToggle);
+        this._syncAwakeIcon();
 
         // The two variable-length lists live inside a single scroll view whose
         // height is capped on open (see _syncScrollHeight). Without this the
@@ -601,10 +745,12 @@ class Indicator extends PanelMenu.Button {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         this._clearItem = new PopupMenu.PopupMenuItem('Clear history');
+        this._clearItem.add_style_class_name('cb-footer-item');
         this._clearItem.connect('activate', () => this._vault?.clear());
         this.menu.addMenuItem(this._clearItem);
 
         this._revealItem = new PopupMenu.PopupMenuItem('Reveal newest in Files');
+        this._revealItem.add_style_class_name('cb-footer-item');
         this._revealItem.connect('activate', () => {
             const shots = this._screenshots ? this._screenshots.entries : [];
             if (shots.length > 0) revealInFiles(shots[0]);
@@ -614,6 +760,7 @@ class Indicator extends PanelMenu.Button {
         // Unlike the vault/screenshot rows, this one doesn't override activate():
         // PopupMenuBase's default close-on-activate is exactly what we want here.
         this._quitItem = new PopupMenu.PopupMenuItem('Quit');
+        this._quitItem.add_style_class_name('cb-footer-item');
         this._quitItem.connect('activate', () => this._quit());
         this.menu.addMenuItem(this._quitItem);
 
@@ -793,6 +940,13 @@ class Indicator extends PanelMenu.Button {
         this._rows[this._selected]?.item.activate();
     }
 
+    _syncAppearance() {
+        const scheme = this._appearanceSettings?.get_string('color-scheme') ?? 'default';
+        const light = scheme === 'prefer-light';
+        this.menu.box.remove_style_class_name(light ? 'cb-dark' : 'cb-light');
+        this.menu.box.add_style_class_name(light ? 'cb-light' : 'cb-dark');
+    }
+
     _syncScrollHeight() {
         if (!this._scrollView) return;
         let index = Main.layoutManager.findIndexForActor(this);
@@ -875,14 +1029,18 @@ class Indicator extends PanelMenu.Button {
         const box = new St.BoxLayout({ x_expand: true, style_class: 'cb-btn-row' });
 
         const area = new St.Button({
-            label: 'Area', x_expand: true, can_focus: true,
+            child: labelledButtonContent('camera-photo-symbolic', 'Area'),
+            x_expand: true, can_focus: true,
             style_class: 'cb-capture-btn button',
+            accessible_name: 'Capture an area',
         });
         area.connect('clicked', () => { this.menu.close(); this._capture('area'); });
 
         const screen = new St.Button({
-            label: 'Screen', x_expand: true, can_focus: true,
+            child: labelledButtonContent('video-display-symbolic', 'Screen'),
+            x_expand: true, can_focus: true,
             style_class: 'cb-capture-btn button',
+            accessible_name: 'Capture the full screen',
         });
         screen.connect('clicked', () => { this.menu.close(); this._capture('full'); });
 
@@ -898,9 +1056,27 @@ class Indicator extends PanelMenu.Button {
         });
         color.connect('clicked', () => { this.menu.close(); this._pickColor(); });
 
+        this._voceButtonIcon = new St.Icon({
+            icon_name: 'audio-input-microphone-symbolic', icon_size: 16,
+        });
+        this._voceButton = new St.Button({
+            can_focus: true,
+            toggle_mode: true,
+            style_class: 'cb-pick-btn cb-voce-btn button',
+            child: this._voceButtonIcon,
+            accessible_name: 'Start dictation',
+        });
+        this._voceButton.connect('clicked', () => {
+            // Close first so the overlay is the only Shell surface left and
+            // the focused application remains the paste target.
+            this.menu.close();
+            Voce.toggle();
+        });
+
         box.add_child(area);
         box.add_child(screen);
         box.add_child(color);
+        box.add_child(this._voceButton);
         item.add_child(box);
         return item;
     }
@@ -941,6 +1117,14 @@ class Indicator extends PanelMenu.Button {
             if (item) this._monitor?.ignore(item.fingerprint);
             St.Clipboard.get_default().set_content(
                 St.ClipboardType.CLIPBOARD, 'image/png', new GLib.Bytes(bytes));
+
+            // Off by default. When on, the capture still lands in history and
+            // on the clipboard exactly as before — the editor is additional,
+            // not a replacement, so turning it on cannot lose a capture.
+            if (this._settings?.get_boolean('edit-after-capture')) {
+                this._openEditor(path);
+                return;
+            }
             Main.notify('Omelette', `Captured ${base}`);
         });
     }
@@ -1144,10 +1328,14 @@ class Indicator extends PanelMenu.Button {
     _buildVisual(visual) {
         switch (visual?.kind) {
         case 'gicon':
-            return this._mountOnPaper(new St.Icon({
+            // St.Icon scales a file icon proportionally into its square rather
+            // than cropping it. Keep the actor unrotated and unobstructed so
+            // the complete image remains visible, whatever its aspect ratio.
+            return new St.Icon({
                 gicon: new Gio.FileIcon({ file: Gio.File.new_for_path(visual.path) }),
                 icon_size: visual.size ?? 64,
-            }), stableTilt(visual.path));
+                style_class: 'cb-thumb cb-image-thumb',
+            });
         case 'swatch':
             // The inline colour wins over .cb-swatch, which only carries the
             // size and border.
@@ -1170,38 +1358,6 @@ class Indicator extends PanelMenu.Button {
                 icon_size: visual?.size ?? 32, style_class: 'cb-thumb',
             });
         }
-    }
-
-    // Tilts a thumbnail and tapes it down. Both are actor geometry rather than
-    // stylesheet, because St's CSS has neither `transform` nor `::before`.
-    //
-    // The wrapper takes .cb-thumb — so the row keeps the same footprint and
-    // right margin it had when the icon carried the class itself — and the icon
-    // inside carries nothing. Without the pivot the thumbnail swings about its
-    // top-left corner instead of turning in place.
-    _mountOnPaper(thumb, degrees) {
-        const mount = new St.Widget({
-            style_class: 'cb-thumb',
-            layout_manager: new Clutter.BinLayout(),
-        });
-        mount.set_pivot_point(0.5, 0.5);
-        mount.rotation_angle_z = degrees;
-        mount.add_child(thumb);
-
-        const tape = new St.Widget({
-            style_class: 'cb-tape',
-            x_align: Clutter.ActorAlign.START,
-            y_align: Clutter.ActorAlign.START,
-        });
-        tape.set_pivot_point(0.5, 0.5);
-        tape.rotation_angle_z = -45;
-        // Straddling the corner rather than sitting inside it. Done with
-        // translation because St clamps negative CSS margins.
-        tape.translation_x = -7;
-        tape.translation_y = 4;
-        mount.add_child(tape);
-
-        return mount;
     }
 
     _makeResultRow(result) {
@@ -1312,6 +1468,7 @@ class Indicator extends PanelMenu.Button {
         this._destroyed = true;
         this._cancelFlash();
         this._cancelSearchDebounce();
+        this._cancelFocusInput();
         this._releasePanel();
         this._rows = [];
         if (this._capturedId) {
@@ -1322,6 +1479,15 @@ class Indicator extends PanelMenu.Button {
             this._settings.disconnect(this._pausedChangedId);
             this._pausedChangedId = 0;
         }
+        if (this._settings && this._awakeChangedId) {
+            this._settings.disconnect(this._awakeChangedId);
+            this._awakeChangedId = 0;
+        }
+        if (this._appearanceSettings && this._appearanceChangedId) {
+            this._appearanceSettings.disconnect(this._appearanceChangedId);
+            this._appearanceChangedId = 0;
+        }
+        this._appearanceSettings = null;
         super.destroy();
     }
 });
@@ -1336,6 +1502,12 @@ export default class OmeletteExtension extends Extension {
         Sensors.shutdown();
         FilePortal.cancelActive();
         PdfRunner.reset();
+        // Both hold something that outlives a reload: an inhibitor cookie that
+        // cannot be recovered from the bus once orphaned, and a read on the
+        // editor's stdout.
+        Awake.shutdown();
+        EditorLauncher.reset();
+        Voce.shutdown();
 
         this._settings = this.getSettings();
         seedQuicklinksOnce(this._settings);
@@ -1353,6 +1525,7 @@ export default class OmeletteExtension extends Extension {
             settings: this._settings,
             uuid: this.uuid,
             version: this.metadata['version-name'] ?? '',
+            path: this.path,
             openPreferences: () => this.openPreferences(),
         });
         Main.panel.addToStatusArea(this.uuid, this._indicator);
@@ -1387,7 +1560,22 @@ export default class OmeletteExtension extends Extension {
                     Sensors.startWatching(this._settings);
                 this._indicator?.refresh();
             }),
+            // One reconciler for Keep awake, watching both keys. Every way of
+            // turning it on — the switch, the shortcut, a command-bar row, the
+            // preferences window — only writes settings, so this is the single
+            // place that talks to gnome-session and the single place that owns
+            // the timer. Awake.apply() is idempotent, so a doubled notification
+            // costs nothing.
+            this._settings.connect('changed::awake', () => this._applyAwake()),
+            this._settings.connect('changed::awake-until', () => this._applyAwake()),
         ];
+
+        // Reconcile once at startup, which is also what re-acquires the
+        // inhibitor after the extension was disabled and re-enabled — locking
+        // the screen does exactly that. A deadline that passed while we were
+        // gone is caught here rather than being silently re-armed, which is
+        // what the absolute `awake-until` is for.
+        this._applyAwake();
 
         this._addKeybindings();
         this._warnIfNoClipboardHelper();
@@ -1396,6 +1584,33 @@ export default class OmeletteExtension extends Extension {
         this._screenshots.start();
         this._monitor.start();
         this._indicator.refresh();
+        Voce.enable({
+            onState: state => {
+                const button = this._indicator?._voceButton;
+                const icon = this._indicator?._voceButtonIcon;
+                if (!button || !icon) return;
+                const active = state === 'recording' || state === 'transcribing';
+                button.set_checked(active);
+                button.set_accessible_name(state === 'recording'
+                    ? 'Stop dictation' : state === 'transcribing'
+                        ? 'Transcribing' : 'Start dictation');
+                icon.icon_name = state === 'recording'
+                    ? 'media-record-symbolic' : state === 'transcribing'
+                        ? 'content-loading-symbolic' : 'audio-input-microphone-symbolic';
+            },
+            onTranscript: ({ id, text, wmClass }) => {
+                ingestText(text, {
+                    vault: this._vault,
+                    monitor: this._monitor,
+                    requestPaste: () => {
+                        const inserted = this._settings?.get_boolean('auto-paste') ?? false;
+                        if (inserted)
+                            Paste.pasteInto({ wmClass, settings: this._settings });
+                        Voce.markInserted(id, inserted);
+                    },
+                }, { store: true, title: 'Dictation' });
+            },
+        });
     }
 
     // Terminal apps (Claude Code, editors) shell out to xclip on X11 or wl-paste
@@ -1434,6 +1649,28 @@ export default class OmeletteExtension extends Extension {
         });
     }
 
+    // Settings in, inhibitor out. Nothing else in the extension calls
+    // Awake.apply().
+    _applyAwake() {
+        Awake.apply({
+            on: this._settings.get_boolean('awake'),
+            until: Number(this._settings.get_int64('awake-until')),
+            appId: this.uuid,
+        }, {
+            onExpire: () => {
+                // Writing `awake` false re-enters this method once through
+                // `changed::awake`. That is harmless — apply() finds nothing
+                // held and does nothing — and it is what keeps the switch, the
+                // panel tint and the rows all correct without a second path.
+                this._settings?.set_int64('awake-until', 0);
+                this._settings?.set_boolean('awake', false);
+                Main.notify('Omelette', 'Keep awake has ended.');
+            },
+            onError: e => Main.notifyError('Omelette', e.message ?? String(e)),
+        });
+        this._indicator?._syncAwakeIcon();
+    }
+
     _addKeybindings() {
         const flags = Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW;
         const handlers = {
@@ -1445,6 +1682,25 @@ export default class OmeletteExtension extends Extension {
             'open-emoji': () => this._indicator?.openForTool('emoji'),
             'open-sensors': () => this._indicator?.openForTool('sensors'),
             'open-pdf': () => this._indicator?.openForTool('pdf'),
+            // Writes the setting and stops, like every other way in. Clears the
+            // deadline too, so the shortcut means "until I turn it off" rather
+            // than silently reviving whatever duration was last used.
+            'toggle-awake': () => {
+                const on = this._settings.get_boolean('awake');
+                this._settings.set_int64('awake-until', 0);
+                this._settings.set_boolean('awake', !on);
+                Main.notify('Omelette', on ? 'Sleep allowed again' : 'Keeping awake');
+            },
+            'open-editor': () => {
+                const shots = this._screenshots?.entries ?? [];
+                if (shots.length === 0) {
+                    Main.notify('Omelette', 'No screenshots to edit yet.');
+                    return;
+                }
+                this._indicator?._openEditor(shots[0]);
+            },
+            'voce-hold': () => Voce.beginHold(),
+            'voce-toggle': () => Voce.toggle(),
         };
         for (const name of KEYBINDINGS) {
             Main.wm.addKeybinding(name, this._settings,
@@ -1473,6 +1729,16 @@ export default class OmeletteExtension extends Extension {
         // deliver its Response to a callback holding a destroyed Indicator.
         FilePortal.cancelActive();
         PdfRunner.reset();
+        // Before anything else that could throw, and unconditionally: an
+        // inhibitor cookie is not recoverable once this object is gone —
+        // GetInhibitors does not expose cookies — so leaking one here means the
+        // machine will not sleep again until the session ends. The setting is
+        // left alone, so re-enabling picks it back up.
+        Awake.shutdown();
+        // Stops reading the editor's stdout. Deliberately does not kill it: a
+        // window someone is drawing in should outlive the extension.
+        EditorLauncher.reset();
+        Voce.shutdown();
 
         this._removeKeybindings();
 

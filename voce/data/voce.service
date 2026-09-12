@@ -1,0 +1,13 @@
+[Unit]
+Description=Voce local dictation service
+After=graphical-session.target pipewire.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/voce --service
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

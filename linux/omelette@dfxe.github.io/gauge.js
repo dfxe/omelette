@@ -1,8 +1,7 @@
 // The circular battery gauge.
 //
-// This is the extension's only custom drawing, and it has to be: St's CSS has
-// neither `transform` nor `::before` (the same limitation _mountOnPaper works
-// around in extension.js), so an arc cannot be faked with a styled widget. That
+// This is the extension's only custom drawing, and it has to be: an arc cannot
+// be faked faithfully with a styled St widget. That
 // leaves St.DrawingArea and Cairo.
 //
 // Colours come from the stylesheet as custom theme properties rather than being

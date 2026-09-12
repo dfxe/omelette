@@ -254,6 +254,13 @@ export default class OmelettePreferences extends ExtensionPreferences {
         });
         images.add(dirHint);
 
+        const editAfter = new Adw.SwitchRow({
+            title: 'Open the editor after a capture',
+            subtitle: 'The capture still lands in history and on the clipboard.',
+        });
+        settings.bind('edit-after-capture', editAfter, 'active', Gio.SettingsBindFlags.DEFAULT);
+        images.add(editAfter);
+
         // --- Privacy ---------------------------------------------------------
         const privacy = new Adw.PreferencesGroup({ title: 'Privacy' });
         page.add(privacy);
@@ -273,6 +280,39 @@ export default class OmelettePreferences extends ExtensionPreferences {
         settings.bind('encrypt-at-rest', encrypt, 'active', Gio.SettingsBindFlags.DEFAULT);
         privacy.add(encrypt);
 
+        // --- Keep awake ------------------------------------------------------
+        const awakeGroup = new Adw.PreferencesGroup({
+            title: 'Keep awake',
+            description: 'Holds an inhibitor against the session so the screen '
+                + 'does not blank and the machine does not suspend.',
+        });
+        page.add(awakeGroup);
+
+        const awake = new Adw.SwitchRow({
+            title: 'Keep awake',
+            subtitle: 'Stays on until switched off. Locking the screen ends it.',
+        });
+        awakeGroup.add(awake);
+
+        // Not settings.bind(), for two reasons. Switching it on here has to
+        // clear any deadline a timed hold left behind, or the new hold expires
+        // the moment it starts. And the mirror below has to be able to move the
+        // switch *without* writing back — otherwise a timed hold started from
+        // the command bar would arrive here as `changed::awake`, flip the
+        // switch, and the resulting notify would wipe the deadline it came with.
+        let syncing = false;
+        awake.set_active(settings.get_boolean('awake'));
+        awake.connect('notify::active', () => {
+            if (syncing) return;
+            settings.set_int64('awake-until', 0);
+            settings.set_boolean('awake', awake.get_active());
+        });
+        settings.connect('changed::awake', () => {
+            syncing = true;
+            try { awake.set_active(settings.get_boolean('awake')); }
+            finally { syncing = false; }
+        });
+
         // --- Shortcuts -------------------------------------------------------
         const shortcuts = new Adw.PreferencesGroup({
             title: 'Keyboard shortcuts',
@@ -291,6 +331,10 @@ export default class OmelettePreferences extends ExtensionPreferences {
         shortcuts.add(shortcutRow(settings, 'open-emoji', 'Open emoji picker'));
         shortcuts.add(shortcutRow(settings, 'open-sensors', 'Open system readings'));
         shortcuts.add(shortcutRow(settings, 'open-pdf', 'Extract PDF pages'));
+        shortcuts.add(shortcutRow(settings, 'toggle-awake', 'Keep awake'));
+        shortcuts.add(shortcutRow(settings, 'open-editor', 'Edit newest screenshot'));
+        shortcuts.add(shortcutRow(settings, 'voce-hold', 'Hold to dictate'));
+        shortcuts.add(shortcutRow(settings, 'voce-toggle', 'Toggle dictation'));
     }
 
     _addToolsPage(window, settings) {

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Voce
+Comment=Private voice dictation for GNOME
+Exec=voce
+Icon=audio-input-microphone-symbolic
+Terminal=false
+Type=Application
+Categories=AudioVideo;Utility;Accessibility;
+Keywords=dictation;speech;voice;whisper;
+

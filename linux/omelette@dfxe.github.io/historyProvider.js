@@ -79,6 +79,16 @@ function vaultResult(it, matchScore, index) {
 
     if (!isText && it.imagePath) {
         actions.push({
+            icon: 'document-edit-symbolic',
+            styleClass: '',
+            // Returns null rather than a message: openEditor closes the popup
+            // itself (a row *action* cannot — the handler in _makeResultRow
+            // only acts on `outcome.message`), and a flash on a row that is
+            // disappearing only ever half-plays.
+            run: ctx => { ctx.openEditor?.(it.imagePath); return null; },
+        });
+
+        actions.push({
             icon: 'insert-link-symbolic',
             styleClass: '',
             run: ctx => {
@@ -176,9 +186,14 @@ export const screenshotProvider = {
             score: matchScore,
             index,
             title: GLib.path_get_basename(path),
-            subtitle: 'Click to peel it off',
+            subtitle: 'Click to copy image',
             visual: { kind: 'gicon', path, size: 64 },
             actions: [{
+                icon: 'document-edit-symbolic',
+                styleClass: '',
+                // See vaultResult above for why this returns null.
+                run: ctx2 => { ctx2.openEditor?.(path); return null; },
+            }, {
                 icon: 'insert-link-symbolic',
                 styleClass: '',
                 run: ctx2 => {

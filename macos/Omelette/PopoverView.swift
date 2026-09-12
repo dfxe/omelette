@@ -2,19 +2,34 @@ import AppKit
 import ImageIO
 import SwiftUI
 
+private enum OmeletteTheme {
+    static let accent = Color(red: 0.91, green: 0.42, blue: 0.24)
+    static let amber = Color(red: 0.95, green: 0.72, blue: 0.29)
+    static func canvas(_ scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(red: 0.14, green: 0.13, blue: 0.12)
+            : Color(red: 0.97, green: 0.95, blue: 0.93)
+    }
+}
+
 struct PopoverView: View {
     @EnvironmentObject var store: VaultStore
     @State private var showAbout = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Everything you copied")
-                    .font(.headline)
+                Label("Everything you copied", systemImage: "square.stack.3d.up.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(OmeletteTheme.accent)
                 Spacer()
                 Text("\(store.items.count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(OmeletteTheme.amber.opacity(0.18), in: Capsule())
             }
             .padding(.horizontal, 4)
 
@@ -61,6 +76,8 @@ struct PopoverView: View {
                 } label: {
                     Label("Area", systemImage: "camera.viewfinder")
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(OmeletteTheme.accent)
                 .help("Capture an area into Omelette (Control-Option-S)")
 
                 Button {
@@ -68,6 +85,8 @@ struct PopoverView: View {
                 } label: {
                     Label("Screen", systemImage: "display")
                 }
+                .buttonStyle(.bordered)
+                .tint(OmeletteTheme.accent)
                 .help("Capture the screen into Omelette")
 
                 Button("About") { showAbout.toggle() }
@@ -78,9 +97,12 @@ struct PopoverView: View {
                     .buttonStyle(.borderless)
                     .keyboardShortcut("q")
             }
-            .padding(.horizontal, 4)
+            .padding(10)
+            .background(OmeletteTheme.amber.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(14)
+        .background(OmeletteTheme.canvas(colorScheme))
         .frame(width: 620)
         .frame(minHeight: 760, idealHeight: 760, maxHeight: 760)
     }
@@ -195,7 +217,7 @@ private struct VaultItemRow: View {
 
                 if copied {
                     Image(systemName: "target")
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(OmeletteTheme.accent)
                         .font(.title3)
                 } else {
                     Image(systemName: "cursorarrow.click")
@@ -204,11 +226,11 @@ private struct VaultItemRow: View {
             }
             .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.secondary.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(copied ? OmeletteTheme.amber.opacity(0.24) : OmeletteTheme.amber.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.secondary.opacity(0.16), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(copied ? OmeletteTheme.accent.opacity(0.55) : OmeletteTheme.accent.opacity(0.16), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -248,11 +270,11 @@ private struct VaultItemRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 96, height: 68)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .frame(width: 84, height: 60)
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.secondary.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(OmeletteTheme.accent.opacity(0.16), lineWidth: 1)
         )
         .overlay(alignment: .topLeading) { tape }
         .rotationEffect(.degrees(tilt))
@@ -278,7 +300,7 @@ private struct VaultItemRow: View {
     private var tape: some View {
         if item.kind == .image {
             RoundedRectangle(cornerRadius: 1)
-                .fill(Color(red: 0.96, green: 0.93, blue: 0.85).opacity(0.5))
+                .fill(OmeletteTheme.amber.opacity(0.62))
                 .frame(width: 34, height: 10)
                 .rotationEffect(.degrees(-45))
                 .offset(x: -8, y: 5)

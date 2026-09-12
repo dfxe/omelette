@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.voce" path="/org/gnome/shell/extensions/voce/">
+    <key name="hold-shortcut" type="as">
+      <default>['&lt;Super&gt;&lt;Alt&gt;space']</default>
+      <summary>Hold-to-talk shortcut</summary>
+    </key>
+    <key name="toggle-shortcut" type="as">
+      <default>['&lt;Super&gt;&lt;Alt&gt;d']</default>
+      <summary>Toggle dictation shortcut</summary>
+    </key>
+    <key name="terminal-apps" type="as">
+      <default>['gnome-terminal', 'kgx', 'console', 'alacritty', 'kitty', 'wezterm', 'foot']</default>
+      <summary>Applications that use Ctrl+Shift+V</summary>
+    </key>
+  </schema>
+</schemalist>

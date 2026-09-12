@@ -1,0 +1,10 @@
+{
+  "uuid": "voce@voce.org",
+  "name": "Voce",
+  "description": "Private, local-first dictation for GNOME",
+  "shell-version": ["46", "47", "48", "49", "50"],
+  "settings-schema": "org.gnome.shell.extensions.voce",
+  "url": "https://github.com/voce-linux/voce",
+  "version": 1
+}
+

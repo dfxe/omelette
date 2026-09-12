@@ -11,14 +11,16 @@ your top bar, for macOS and GNOME.
 Your clipboard remembers one thing. Omelette remembers the last few hundred,
 keeps your recent screenshots beside them, and gives any of it back with a
 click. On GNOME the same search box also does snippets, a calculator,
-quicklinks and emoji.
+quicklinks and emoji, with optional private local voice dictation.
 
-Everything stays on your machine. No accounts, no sync. The only feature that
-touches the network is currency conversion, and it is off by default.
+Everything stays on your machine. No accounts, no sync. Currency conversion is
+off by default; Voce only uses the network when you explicitly download a
+speech model.
 
 ```
 macos/    Swift + SwiftUI MenuBarExtra app   (macOS 13+, no Xcode project)
 linux/    GNOME Shell extension, GJS / ESM   (GNOME 45–49, no build step)
+voce/     Optional Whisper dictation backend (GNOME/Wayland, GPL-3.0+)
 ```
 
 ## 📸 What it looks like
@@ -43,6 +45,9 @@ implementation today.
 | Clipboard history (text + images)      |   ✅   |   ✅   |
 | Screenshot capture (area / screen)     |   ✅   |   ✅   |
 | Screen color picker (hex)              |   —   |   ✅   |
+| Image annotation · arrows · boxes · text |  —   |   ✅   |
+| Keep awake (blocks sleep and blanking)  |   —   |   ✅   |
+| Local voice dictation (optional Voce)   |   —   |   ✅   |
 | Search · pin · delete                  |   —   |   ✅   |
 | Pause (incognito)                      |   ✅   |   ✅   |
 | Ranked command bar + keyboard nav      |   —   |   ✅   |
@@ -89,6 +94,24 @@ gnome-extensions enable omelette@dfxe.github.io
 
 A clipboard icon appears in the top panel. If it doesn't,
 `gnome-extensions info omelette@dfxe.github.io` reports the state and the error.
+The optional `linux/org.dfxe.Omelette.desktop` launcher opens preferences and
+can be installed with its icon under `~/.local/share/applications` and
+`~/.local/share/icons/hicolor` to expose Omelette in the app
+drawer.
+
+For private local dictation, build the optional Voce backend after installing
+its Ubuntu dependencies:
+
+```sh
+cd voce
+make check test build
+make runtime
+make install-user
+systemctl --user enable --now voce.service
+```
+
+Open `voce` once to download a Whisper model. Dictation then lives in the
+Omelette menu: hold `Super+Alt+Space`, or toggle with `Super+Alt+D`.
 
 ## 🍎 macOS
 
@@ -142,7 +165,8 @@ under its own heading, focused the moment the popup opens.
 | `Esc` | Clears the query, then leaves a tool, then closes the popup |
 
 Sections are ordered **Answer**, **Quicklinks**, **Snippets**, **Emoji &
-symbols**, **System**, **PDF**, **Things you copied**, **Screenshots** — each capped, and
+symbols**, **System**, **Keep awake**, **PDF**, **Edit an image**, **Things you
+copied**, **Screenshots** — each capped, and
 hidden when nothing matches. Ranking is shared by every source: exact beats prefix beats word
 boundary beats substring beats loose subsequence (`bgcol` finds
 `background-color`), and shorter matches win ties.
@@ -180,6 +204,16 @@ Activating a row copies it **and** sends `Ctrl+V` to the window that had focus
   overwritten — a second run of the same range writes `… (2).pdf`. Needs
   **poppler-utils**; without it the section says so instead of offering a
   button that cannot work.
+- **Edit** — opens a screenshot or a copied image in **omelette-edit**, a small
+  GTK4 window for drawing arrows, boxes and text in any of eight colours, plus
+  an eyedropper that reads a colour straight off the image and copies the hex.
+  The edit button appears on every image row; `edit` in the command bar lists
+  the recent shots and offers a file chooser. See
+  [The image editor](#the-image-editor).
+- **Keep awake** — stops the screen blanking and the machine suspending, either
+  until you switch it off or for 15 minutes, an hour or two hours. Typing
+  `caffeine`, `coffee` or `insomnia` finds it too. There is also a switch in the
+  popup, and the panel icon takes on a colour while it is holding.
 
 ### The rest
 
@@ -206,6 +240,77 @@ The PDF tool is the one other feature with an external prerequisite:
 (`sudo apt install poppler-utils`). It is the only thing here that runs a
 subprocess, and it does so with argv arrays rather than a shell, so a path with
 spaces or quotes in it needs no escaping.
+
+### The image editor
+
+`omelette-edit` is a separate GTK4 window, not part of the popup. A drawing
+canvas inside gnome-shell would put hit-testing and an undo stack in the
+compositor process, where a mistake does not throw an exception — it freezes the
+desktop. It also means the editor runs straight from a terminal, with a real
+stack trace on stderr:
+
+```sh
+gjs -m ~/.local/share/gnome-shell/extensions/omelette@dfxe.github.io/editor/main.js shot.png
+```
+
+Four tools — arrow, box, text, eyedropper — three stroke widths, eight colours
+plus a colour picker, and undo/redo. Colour is a property of each shape, so
+changing it never restyles what is already drawn. Text is typed into a popover
+where you clicked and gets a contrasting halo, so white on a red button is still
+readable.
+
+**It never overwrites anything.** Save always writes a new file — `shot.png`
+becomes `shot (edited).png`, then `shot (edited) (2).png` — and an edit of a
+*copied* image is written to the screenshots folder rather than back into
+`~/.local/share/omelette/images/`. That directory is content-addressed: the
+filenames are hashes of the bytes, and the vault skips writing a file it already
+has, so editing one in place would permanently replace the original and a new
+file dropped in beside it would be garbage-collected.
+
+**Copy** hands the PNG back to the extension rather than taking the clipboard
+itself. On X11 clipboard ownership belongs to a process, so closing the editor
+would empty it — GNOME ships no clipboard manager to hold the bytes. gnome-shell
+does not exit, so it owns the write, over a one-line-per-event protocol on the
+editor's stdout.
+
+It needs `gjs`, which is a *different package* from the library gnome-shell
+itself uses — the Shell links `libgjs`, so the interpreter may not be installed
+(`sudo apt install gjs`). Without it the section says so rather than offering a
+button that cannot work, exactly as the PDF tool does for poppler.
+
+Under Wayland the window falls back to a generic icon in the overview and
+alt-tab, because GNOME matches windows to an installed `.desktop` file by
+application ID and there is no install step to put one there.
+
+### Keeping the machine awake
+
+**Keep awake** holds an inhibitor against `org.gnome.SessionManager` for both
+suspend *and* idle. Either alone is not enough: idle-only still lets the machine
+suspend on the power setting, and suspend-only still lets the screen blank and
+lock underneath you.
+
+The deadline is stored as an absolute time, not a countdown, because a countdown
+cannot survive the things that routinely interrupt one — locking the screen
+disables the extension and stops its timers, and timers do not advance across a
+suspend. A wall-clock deadline is still correct after either.
+
+**Locking the screen ends it.** GNOME disables extensions on the lock screen
+unless they declare `session-modes`, and declaring it would keep clipboard
+monitoring running while the session is locked — a worse trade than losing the
+inhibitor. Unlocking re-acquires it if the deadline has not passed.
+
+If you are checking whether it is really holding, look for the inhibitor by name
+rather than asking whether the session is inhibited at all:
+
+```sh
+gdbus call --session --dest org.gnome.SessionManager \
+  --object-path /org/gnome/SessionManager \
+  --method org.gnome.SessionManager.GetInhibitors
+```
+
+`IsInhibited` ORs across every client on the session and reads `true` on an
+ordinary desktop anyway, because a browser playing a video is already holding
+one.
 
 ### Upgrading from clipboard-box or cBoite
 
@@ -265,16 +370,21 @@ the popup immediately, without a shell restart.
 | Exchange rate endpoint      | frankfurter.app          | ECB daily rates, no API key                         |
 | Show device batteries and fan speeds | on              | Read locally; nothing leaves the machine            |
 | Fan reading interval        | 2 s                      | Only while the popup is open; batteries aren't polled |
+| Open the editor after a capture | **off**              | The capture still lands in history and on the clipboard |
+| Keep awake                  | off                      | Blocks blanking and suspend; ends when the screen locks |
 
-Shortcuts are all unbound by default and take a raw accelerator string such as
-`<Super><Shift>V`: **Open clipboard menu**, **Capture area**, **Capture
+Shortcuts take a raw accelerator string such as `<Super><Shift>V`.
+Dictation defaults to `Super+Alt+Space` (hold) and `Super+Alt+D` (toggle);
+the rest are unbound by default: **Open clipboard menu**, **Capture area**, **Capture
 screen**, **Pick color**, **Open snippets**, **Open emoji picker**, **Open
-system readings**, **Extract PDF pages**. The last four open the popup scoped to
-that one tool.
+system readings**, **Extract PDF pages**, **Keep awake**, **Edit newest
+screenshot**, **Hold to dictate**, **Toggle dictation**. **Open snippets**
+through **Extract PDF pages** open the popup
+scoped to that one tool; the last two act immediately without opening it.
 
 ### Currency and the network
 
-The only feature that makes a network request, and **off by default** — with it
+The only built-in feature that makes a network request, and **off by default** — with it
 off nothing is ever fetched. With it on, rates come from `api.frankfurter.app`
 (ECB daily reference rates, no API key, configurable endpoint), fetched only when
 you type a conversion and at most once every 12 hours, then cached to
@@ -283,13 +393,15 @@ with their age shown. Only the currency codes are implied by the request.
 
 ## 🔒 Storage & privacy
 
-Everything is local. The opt-in exchange-rate fetch is the only outbound request.
+Everything else in the core suite is local. Optional Voce separately downloads
+the speech model you choose; transcription is offline after that.
 
 |                     | macOS                                                       | GNOME                                        |
 | ------------------- | ----------------------------------------------------------- | -------------------------------------------- |
 | History             | `~/Library/Application Support/omelette/vault.json`     | `~/.local/share/omelette/vault.json`     |
 | Images              | inline, base64 in `vault.json`                               | `~/.local/share/omelette/images/*.png`   |
 | Screenshots         | `~/Library/Application Support/omelette/synced-screenshots/` | `~/Pictures/Screenshots/`               |
+| Edited images       | —                                                            | beside the original, or `~/Pictures/Screenshots/` |
 | Snippets, quicklinks | —                                                          | GSettings (`dconf`), as JSON strings          |
 | Cached rates        | —                                                            | `~/.local/share/omelette/rates.json`     |
 | File perms          | `0600`                                                       | `0600` / `0700`                               |
@@ -321,7 +433,8 @@ linux/tests/parse-check.sh  # syntax-check every module
 No dependencies and no build step: the tested modules import nothing from
 `resource:///`, so they load in plain `gjs` with no Shell and no display. That
 covers `match`, `calc`, `units`, `format`, `configStore`, `searchRegistry`,
-`sensors`, `vaultStore`, `pdfExtract` and `pdfProvider`; everything else imports
+`sensors`, `vaultStore`, `pdfExtract`, `pdfProvider`, `awake`, `awakeProvider`
+and the editor's `shapes`, `palette` and `exportImage`; everything else imports
 `St`/`Clutter` and needs a real shell, so `parse-check.sh` at least
 syntax-checks those.
 

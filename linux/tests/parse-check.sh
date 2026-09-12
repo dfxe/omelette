@@ -24,8 +24,14 @@ trap 'rm -rf "$tmp"' EXIT INT TERM
 
 status=0
 count=0
-for f in "$ext"/*.js; do
-    base=$(basename "$f" .js)
+# The editor is a separate GTK4 program shipped inside the extension directory,
+# so it needs checking too — and its files are named for their role, which means
+# editor/render.js would collide with a top-level render.js under basename. The
+# path is flattened instead: editor/render.js becomes editor-render.mjs.
+for f in "$ext"/*.js "$ext"/editor/*.js; do
+    [ -e "$f" ] || continue
+    rel=${f#"$ext"/}
+    base=$(printf '%s' "${rel%.js}" | tr / -)
     # node infers module type from the extension; .mjs forces ESM.
     cp "$f" "$tmp/$base.mjs"
     if ! node --check "$tmp/$base.mjs"; then

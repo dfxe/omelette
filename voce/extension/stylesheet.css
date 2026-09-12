@@ -1,0 +1,12 @@
+.voce-overlay {
+  spacing: 10px;
+  padding: 12px 18px;
+  border-radius: 24px;
+  background-color: rgba(24, 24, 27, 0.94);
+  color: white;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.voce-overlay-icon { color: #ff7b63; icon-size: 20px; }
+.voce-recording { color: #ff6b52; }
+
