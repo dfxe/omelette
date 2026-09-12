@@ -1,4 +1,4 @@
-# <img src="docs/assets/omelette.png" alt="Omelette app icon" width="96" /> Omelette
+# <img src="docs/assets/omelette.png" alt="Omelette app icon" width="96" /> <h1>Omelette</h1>
 
 **Everything you copy, within reach.**
 
