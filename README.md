@@ -1,7 +1,8 @@
 # 📋 Omelette
 
-**Everything you copy, within reach.** A clipboard and screenshot history in
-your top bar, for macOS and GNOME.
+**Everything you copy, within reach.**
+
+A clipboard and screenshot history in your top bar, for macOS and GNOME.
 
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![GNOME 45-49](https://img.shields.io/badge/GNOME-45--49-4A86CF)
