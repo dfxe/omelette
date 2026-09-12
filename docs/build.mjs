@@ -5,11 +5,11 @@
 //   node docs/build.mjs            render the shots, then build docs/_site/
 //   node docs/build.mjs --check    verify the committed shots are current (CI)
 //
-// The page carries no prose of its own. Two regions are lifted out of
+// The page carries no prose of its own. One region is lifted out of
 // README.md at build time and substituted into index.template.html, so the two
 // cannot drift: docs/_site/ is generated and gitignored, and the workflow
 // rebuilds it on every push to main. The page deliberately uses only the README
-// tagline and lede; the full details remain in the README.
+// tagline; the full details remain in the README.
 //
 // No package.json and no dependencies, matching the rest of the repo — the one
 // exception is Playwright, which is imported lazily so that --check (the mode
@@ -106,27 +106,25 @@ function extract(markdown) {
     const { preamble, sections } = readSections(markdown);
 
     // Addressed by position because the README's opening has no headings to
-    // hang off: after the two skips, block 0 is the tagline and 1–2 are the
-    // lede. Block 3 is the macos/linux tree, which the page does not use.
+    // hang off: after the two skips, block 0 is the tagline. The full lede
+    // stays in the README, keeping the public page intentionally brief.
     const intro = paragraphs(preamble).filter(
         block => !SKIP_IN_PREAMBLE.some(pattern => pattern.test(block))
     );
-    if (intro.length < 3) {
+    if (intro.length < 1) {
         throw new Error(
-            `Expected at least 3 paragraphs above the first "## " in README.md, found ${intro.length}. ` +
-                `The page takes its tagline and lede from there.`
+            `Expected a tagline above the first "## " in README.md, found .`
         );
     }
 
     return {
         tagline: render(intro[0]),
-        lede: render(intro.slice(1, 3).join('\n\n')),
     };
 }
 
 // ─── A markdown subset ─────────────────────────────────────────────────────
 
-// Deliberately partial: it handles exactly what the four extracted regions
+// Deliberately partial: it handles the one extracted region
 // contain and throws on anything else. A page that silently prints raw
 // asterisks, or swallows a list, is worse than a build that stops — and the
 // alternative, pulling in a full markdown parser, would be the repo's first

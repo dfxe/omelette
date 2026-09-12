@@ -463,7 +463,7 @@ responding to clicks.
 
 ### The website
 
-[dfxe.github.io/omelette](https://dfxe.github.io/omelette) is a concise project page, built from this file: `docs/build.mjs` lifts the tagline and lede into `docs/index.template.html`; the README holds the full documentation. A push to `main` redeploys it.
+[dfxe.github.io/omelette](https://dfxe.github.io/omelette) is a concise project page, built from this file: `docs/build.mjs` lifts the tagline into `docs/index.template.html`; the README holds the full documentation. A push to `main` redeploys it.
 
 ```sh
 npm ci --prefix docs
