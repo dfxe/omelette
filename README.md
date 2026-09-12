@@ -2,6 +2,8 @@
 
 **Everything you copy, within reach.**
 
+<img src="docs/assets/omelette.png" alt="Omelette app icon" width="96" />
+
 A clipboard and screenshot history in your top bar, for macOS and GNOME.
 
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)

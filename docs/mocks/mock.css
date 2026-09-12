@@ -49,6 +49,14 @@ body {
    approximation. Painted through mask-image so each one inherits currentColor
    the way a real symbolic icon does. */
 
+.app-icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
 .i {
     display: inline-block;
     flex: none;
