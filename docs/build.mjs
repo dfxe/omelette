@@ -106,19 +106,20 @@ function extract(markdown) {
     const { preamble, sections } = readSections(markdown);
 
     // Addressed by position because the README's opening has no headings to
-    // hang off: after the two skips, block 0 is the tagline. The full lede
-    // stays in the README, keeping the public page intentionally brief.
+    // hang off: after the branding skips, blocks 0 and 1 are the tagline and
+    // supporting sentence. The full lede stays in the README.
     const intro = paragraphs(preamble).filter(
         block => !SKIP_IN_PREAMBLE.some(pattern => pattern.test(block))
     );
-    if (intro.length < 1) {
+    if (intro.length < 2) {
         throw new Error(
-            `Expected a tagline above the first "## " in README.md, found .`
+            `Expected a tagline and supporting sentence above the first "## " in README.md.`
         );
     }
 
     return {
         tagline: render(intro[0]),
+        supporting: render(intro[1]),
     };
 }
 

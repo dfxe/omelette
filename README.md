@@ -2,19 +2,25 @@
 
 <img src="docs/assets/omelette.png" alt="Omelette app icon" width="96"/>
 
-**Everything you copy, within reach.**
+**Built for coding agent workflows.**
 
-A clipboard and screenshot history in your top bar, for macOS and GNOME.
+Clipboard and screenshot history for working with coding agents, right in your
+top bar. For macOS and GNOME.
 
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![GNOME 45-49](https://img.shields.io/badge/GNOME-45--49-4A86CF)
 ![license MIT](https://img.shields.io/badge/license-MIT-green)
 [![website](https://img.shields.io/badge/website-dfxe.github.io%2Fomelette-f0f0ea)](https://dfxe.github.io/omelette)
 
-Your clipboard remembers one thing. Omelette remembers the last few hundred,
-keeps your recent screenshots beside them, and gives any of it back with a
-click. On GNOME the same search box also does snippets, a calculator,
-quicklinks and emoji, with optional private local voice dictation.
+Omelette is made mainly for coding agent workflows. Reuse prompts and terminal
+output, capture screenshots to share with agents, and keep useful context
+within reach as you move between your editor, terminal, and agent conversations.
+Clipboard history and screenshot capture are available on both macOS and GNOME.
+
+On GNOME, save reusable instructions as snippets, annotate screenshots to point
+out a bug or UI change, dictate instructions with optional local Voce, and use
+Keep awake during long agent runs. The command bar also offers a calculator,
+quicklinks and emoji.
 
 Everything stays on your machine. No accounts, no sync. Currency conversion is
 off by default; Voce only uses the network when you explicitly download a
@@ -466,7 +472,7 @@ responding to clicks.
 
 ### The website
 
-[dfxe.github.io/omelette](https://dfxe.github.io/omelette) is a concise project page, built from this file: `docs/build.mjs` lifts the tagline into `docs/index.template.html`; the README holds the full documentation. A push to `main` redeploys it.
+[dfxe.github.io/omelette](https://dfxe.github.io/omelette) is a concise project page, built from this file: `docs/build.mjs` lifts the tagline and supporting sentence into `docs/index.template.html`; the README holds the full documentation. A push to `main` redeploys it.
 
 ```sh
 npm ci --prefix docs
