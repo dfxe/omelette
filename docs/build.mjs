@@ -95,12 +95,12 @@ function paragraphs(markdown) {
         .filter(Boolean);
 }
 
-// Two blocks in the preamble are the page's own business rather than content it
-// should reprint: the H1, because the page has a header, and the shields row,
+// Branding blocks in the preamble are the page's own business rather than content it
+// should reprint: the app icon, the H1, because the page has a header, and the shields row,
 // because the header states the platforms already. Dropping them here is also
 // what makes the positional indices below stable.
 // The optional leading [ catches a shield that has been wrapped in a link.
-const SKIP_IN_PREAMBLE = [/^#\s/, /^\[?!\[/];
+const SKIP_IN_PREAMBLE = [/^#\s/, /^\[?!\[/, /^<img\s[^>]*src="docs\/assets\/omelette\.png"/];
 
 function extract(markdown) {
     const { preamble, sections } = readSections(markdown);

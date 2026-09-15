@@ -16,7 +16,7 @@ jobs:
       - name: Install gjs
         run: |
           sudo apt-get update
-          sudo apt-get install -y gjs libglib2.0-bin
+          sudo apt-get install -y gjs libglib2.0-bin gir1.2-gtk-4.0
 
       # A schema that does not compile makes enable() throw at runtime with a
       # message that points nowhere near the actual mistake.
