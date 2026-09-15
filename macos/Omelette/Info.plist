@@ -14,6 +14,8 @@
     <string>Omelette</string>
     <key>CFBundleDisplayName</key>
     <string>omelette</string>
+    <key>CFBundleIconFile</key>
+    <string>Omelette.icns</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

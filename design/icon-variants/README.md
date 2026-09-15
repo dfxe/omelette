@@ -8,4 +8,5 @@ Five generated PNG explorations for a more immediately recognizable omelette app
 4. Top-down omelette in a skillet
 5. Simplified clay-style folded omelette
 
-These are review concepts and do not replace the production SVG icon.
+`omelette-04-skillet.png` is used for the application icons, menu-bar icons, and website branding.
+The other variants remain review concepts.

@@ -95,7 +95,7 @@ ln -s "$PWD/linux/omelette@dfxe.github.io" ~/.local/share/gnome-shell/extensions
 gnome-extensions enable omelette@dfxe.github.io
 ```
 
-A clipboard icon appears in the top panel. If it doesn't,
+An omelette skillet icon appears in the top panel. If it doesn't,
 `gnome-extensions info omelette@dfxe.github.io` reports the state and the error.
 The optional `linux/org.dfxe.Omelette.desktop` launcher opens preferences and
 can be installed with its icon under `~/.local/share/applications` and
@@ -152,7 +152,7 @@ The popover has a Pause toggle, Area, Screen, About and Quit, and nothing else.
 
 ## 🐧 GNOME
 
-A clipboard icon appears in the top panel. Copy text or an image and it shows up
+An omelette skillet icon appears in the top panel. Copy text or an image and it shows up
 under **Things you copied**; `PrtScn` shots show under **Screenshots**.
 
 ### The command bar

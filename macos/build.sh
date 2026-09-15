@@ -28,6 +28,8 @@ swiftc \
     "$SRC_DIR"/*.swift
 
 cp "$SRC_DIR/Info.plist" "$CONTENTS/Info.plist"
+cp "$SRC_DIR/Resources/omelette.png" "$CONTENTS/Resources/omelette.png"
+iconutil -c icns "$SRC_DIR/Resources/Omelette.iconset" -o "$CONTENTS/Resources/Omelette.icns"
 
 # Ad-hoc sign so Gatekeeper allows running locally.
 codesign --force --sign - "$APP_BUNDLE" >/dev/null
