@@ -48,7 +48,7 @@ export const aboutProvider = {
                 score: aboutScore,
                 index: 0,
                 title: `Omelette${version}`,
-                subtitle: 'A GNOME extension · MIT · github.com/dfxe/omelette',
+                subtitle: 'Early beta for coding agent workflows · MIT · github.com/dfxe/omelette',
                 visual: { kind: 'icon', name: 'help-about-symbolic', size: 32 },
                 accel: 'Open',
                 run: () => {

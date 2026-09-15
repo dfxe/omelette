@@ -124,7 +124,7 @@ private struct AboutView: View {
             Text("Omelette \(version)")
                 .font(.headline)
 
-            Text("Everything you copy, within reach.")
+            Text("Early beta · Built for coding agent workflows.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

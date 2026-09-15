@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Omelette
-Comment=Clipboard, screenshots, tools and local dictation
+Comment=Early beta for coding agent workflows: clipboard, screenshots, tools and local dictation
 Exec=gnome-extensions prefs omelette@dfxe.github.io
 Icon=omelette
 Terminal=false

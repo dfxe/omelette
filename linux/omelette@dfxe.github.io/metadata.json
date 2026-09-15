@@ -1,7 +1,7 @@
 {
   "uuid": "omelette@dfxe.github.io",
   "name": "Omelette",
-  "description": "Everything you copy, within reach. A clipboard and screenshot vault in the top bar, with a ranked command bar for snippets, a calculator, unit conversion, quicklinks and emoji. Click any entry to copy it back, and nothing leaves your machine.",
+  "description": "Early beta built mainly for coding agent workflows. Clipboard and screenshot history in your top bar, with snippets, image annotation, Keep awake, and optional local voice dictation. For GNOME.",
   "version-name": "0.1.0",
   "shell-version": ["45", "46", "47", "48", "49"],
   "settings-schema": "org.gnome.shell.extensions.omelette",

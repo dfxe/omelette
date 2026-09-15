@@ -100,7 +100,7 @@ function paragraphs(markdown) {
 // because the header states the platforms already. Dropping them here is also
 // what makes the positional indices below stable.
 // The optional leading [ catches a shield that has been wrapped in a link.
-const SKIP_IN_PREAMBLE = [/^#\s/, /^\[?!\[/, /^<img\s[^>]*src="docs\/assets\/omelette\.png"/];
+const SKIP_IN_PREAMBLE = [/^\*\*Early beta\*\*$/, /^#\s/, /^\[?!\[/, /^<img\s[^>]*src="docs\/assets\/omelette\.png"/];
 
 function extract(markdown) {
     const { preamble, sections } = readSections(markdown);

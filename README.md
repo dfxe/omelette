@@ -2,6 +2,8 @@
 
 <img src="docs/assets/omelette.png" alt="Omelette app icon" width="96"/>
 
+**Early beta**
+
 **Built for coding agent workflows.**
 
 Clipboard and screenshot history for working with coding agents, right in your
@@ -12,7 +14,7 @@ top bar. For macOS and GNOME.
 ![license MIT](https://img.shields.io/badge/license-MIT-green)
 [![website](https://img.shields.io/badge/website-dfxe.github.io%2Fomelette-f0f0ea)](https://dfxe.github.io/omelette)
 
-Omelette is made mainly for coding agent workflows. Reuse prompts and terminal
+Omelette is an early beta made mainly for coding agent workflows. Reuse prompts and terminal
 output, capture screenshots to share with agents, and keep useful context
 within reach as you move between your editor, terminal, and agent conversations.
 Clipboard history and screenshot capture are available on both macOS and GNOME.
