@@ -127,6 +127,15 @@
 
             .lede {
                 padding: clamp(36px, 7vw, 76px) 0 clamp(28px, 5vw, 48px);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 36px;
+            }
+
+            .lede-content {
+                flex: 1 1 540px;
+                min-width: 0;
             }
 
             /* The tagline arrives as one <p> whose leading <strong> is the
@@ -158,6 +167,63 @@
 
             .lede .body p:last-child {
                 margin-bottom: 0;
+            }
+
+            /* ── 3D Hero Widget ───────────────────────────────────────── */
+
+            .hero-3d-wrap {
+                flex: 0 0 clamp(220px, 28vw, 320px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                user-select: none;
+            }
+
+            .hero-3d-container {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                border-radius: 24px;
+                cursor: grab;
+                touch-action: none;
+            }
+
+            .hero-3d-container:active {
+                cursor: grabbing;
+            }
+
+            .hero-3d-fallback {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+
+            .hero-3d-canvas-box {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .hero-3d-canvas-box canvas {
+                display: block;
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 24px;
+            }
+
+            .hero-3d-hint {
+                margin-top: 8px;
+                color: var(--dim);
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                text-align: center;
             }
 
             /* ── Sections ─────────────────────────────────────────────── */
@@ -335,8 +401,20 @@
                     grid-template-columns: minmax(0, 1fr);
                 }
 
+                .lede {
+                    flex-direction: column-reverse;
+                    align-items: center;
+                    text-align: center;
+                    gap: 28px;
+                }
+
                 .lede .tagline {
                     max-width: none;
+                }
+
+                .hero-3d-wrap {
+                    max-width: 260px;
+                    width: 100%;
                 }
             }
         </style>
@@ -355,8 +433,24 @@
             </header>
 
             <div class="lede">
-                <div class="tagline"><!-- cb:tagline --></div>
-                <div class="body"><!-- cb:supporting --></div>
+                <div class="lede-content">
+                    <div class="tagline"><!-- cb:tagline --></div>
+                    <div class="body"><!-- cb:supporting --></div>
+                </div>
+                <div class="hero-3d-wrap">
+                    <div class="hero-3d-container">
+                        <img
+                            id="hero-fallback-img"
+                            class="hero-3d-fallback"
+                            src="assets/omelette.png"
+                            alt="Omelette in cast iron skillet"
+                            width="320"
+                            height="320"
+                        />
+                        <div id="hero-3d-canvas" class="hero-3d-canvas-box"></div>
+                    </div>
+                    <div class="hero-3d-hint">3D · Drag to rotate</div>
+                </div>
             </div>
 
             <section>
@@ -405,5 +499,6 @@
                 </nav>
             </footer>
         </div>
+        <script type="module" src="assets/omelette-3d.js"></script>
     </body>
 </html>

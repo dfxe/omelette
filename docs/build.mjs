@@ -489,8 +489,11 @@ async function build() {
     for (const shot of SHOT_LIST) {
         await copyFile(join(SHOTS, `${shot.name}.png`), join(SITE, 'shots', `${shot.name}.png`));
     }
-    await copyFile(join(DOCS, 'assets', 'omelette.png'), join(SITE, 'assets', 'omelette.png'));
-    console.log(`  site  docs/_site/index.html  (+ ${SHOT_LIST.length} images, 1 app icon)`);
+    const assetFiles = await readdir(join(DOCS, 'assets'));
+    for (const file of assetFiles) {
+        await copyFile(join(DOCS, 'assets', file), join(SITE, 'assets', file));
+    }
+    console.log(`  site  docs/_site/index.html  (+ ${SHOT_LIST.length} images, ${assetFiles.length} assets)`);
 
     await checkFontFloor();
 }
