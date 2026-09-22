@@ -13,6 +13,10 @@ here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 sandbox=$(mktemp -d "${TMPDIR:-/tmp}/omelette-tests.XXXXXX")
 trap 'rm -rf "$sandbox"' EXIT INT TERM
 
+if command -v node >/dev/null 2>&1; then
+    node --test "$here/capture.test.mjs"
+fi
+
 XDG_DATA_HOME="$sandbox" \
 OMELETTE_TEST_SANDBOX=1 \
 exec gjs -m "$here/run.js"
