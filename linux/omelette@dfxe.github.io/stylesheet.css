@@ -1,35 +1,243 @@
-/* Omelette's popup chrome.
+/* Omelette's popup chrome: the "Yolk" skin.
  *
- * Two conventions run through this file. Both exist because the popup is drawn
- * inside someone else's theme, in one of two colour schemes, and St gives us no
- * variables to hang either on.
+ * The popup paints its own surface rather than borrowing the Shell theme's, so
+ * it reads as Omelette and not as one more system menu: a cream page on light,
+ * a dark-roast page on dark, with yolk as the single accent. extension.js puts
+ * .cb-light or .cb-dark on the menu box from org.gnome.desktop.interface
+ * color-scheme, and every colour below hangs off one of those two classes.
  *
- * 1. THE OPACITY SCALE. Text hierarchy is built from `color: inherit` plus one
- *    of three steps, never an ad-hoc value:
+ * The accent is deliberately not -st-accent-color. A brand palette that
+ * changes with the user's accent is not a brand palette, and yolk is chosen to
+ * sit on both surfaces with readable contrast, which an arbitrary accent is not
+ * guaranteed to do. .cb-accent is still added by extension.js but nothing here
+ * depends on it.
  *
- *        1      primary     titles, answers, the active state
- *        0.7    secondary   subtitles, captions, field labels
- *        0.55   tertiary    accels, at-rest row buttons, placeholders
+ * Text steps, per scheme, all at least 4.5:1 against their own surface:
  *
- *    The floor is 0.55 on purpose. Dimming by opacity costs far more contrast
- *    on a light theme than a dark one — dark-on-light at 0.4 lands around
- *    2.5:1, which fails WCAG, while light-on-dark at 0.4 is still legible. The
- *    old sheet had nine values between 0.4 and 0.85 and was tuned on dark.
+ *                 dark (#221b16)     light (#fbf5e9)
+ *     ink         #f6eee4            #2a211b         titles, answers
+ *     muted       #c9bcae            #6b5d50         subtitles, captions
+ *     faint       #a89887            #7a6a5b         accels, row buttons
+ *     yolk text   #f2b84b            #94570c         section heads, ticks
  *
- * 2. NEUTRAL, NOT WHITE. Anything painted rather than written uses grey at low
- *    alpha — rgba(128,128,128,a) — so one value reads on both schemes. The
- *    alternative is a stylesheet-light.css / stylesheet-dark.css pair, but
- *    Shell loads the *first* variant it finds instead of layering it over this
- *    file, so that would mean maintaining two copies of the whole sheet.
+ * Solid colours rather than opacity: dimming by opacity costs far more contrast
+ * on a light surface than a dark one, and the old sheet was tuned on dark.
  *
- * Accent colour: GNOME 47 added -st-accent-color, and metadata.json still
- * claims 45. Rules that use it are therefore gated behind .cb-accent, which
- * extension.js adds only when org.gnome.desktop.interface actually has the
- * accent-color key. On 45/46 the selector simply never matches, so an unknown
- * value can never override a literal that already resolved. */
+ * Anything that floats over arbitrary content instead of inside the popup (the
+ * colour-pick tip, the Voce overlay) carries its own fixed palette and is left
+ * alone by the skin. */
+
+/* --- Surface ------------------------------------------------------------ */
+
+/* Three classes so this outranks the theme's own .popup-menu-content rules
+   regardless of how the theme nests them. */
+.popup-menu-content.cb-menu.cb-dark,
+.popup-menu-content.cb-menu.cb-light {
+    padding: 10px;
+    border-radius: 18px;
+}
+
+.popup-menu-content.cb-menu.cb-dark {
+    background-color: #221b16;
+    border: 1px solid rgba(242, 184, 75, 0.16);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    color: #f6eee4;
+}
+
+.popup-menu-content.cb-menu.cb-light {
+    background-color: #fbf5e9;
+    border: 1px solid rgba(148, 87, 12, 0.18);
+    box-shadow: 0 6px 20px rgba(60, 36, 8, 0.18);
+    color: #2a211b;
+}
+
+/* --- Search ------------------------------------------------------------- */
+
+.cb-search {
+    min-width: 460px;
+    margin: 0 0 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 1.05em;
+    transition-duration: 120ms;
+}
+
+.cb-dark .cb-search {
+    color: #f6eee4;
+    background-color: #2d241e;
+    border-color: #3b3029;
+    hint-text-color: #a89887;
+    selection-background-color: #f2b84b;
+    selected-color: #2a1a05;
+    caret-color: #f2b84b;
+}
+
+.cb-light .cb-search {
+    color: #2a211b;
+    background-color: #ffffff;
+    border-color: #eadfcb;
+    hint-text-color: #7a6a5b;
+    selection-background-color: #f2b84b;
+    selected-color: #2a1a05;
+    caret-color: #94570c;
+}
+
+.cb-dark .cb-search:focus { border-color: #f2b84b; background-color: #30261d; }
+.cb-light .cb-search:focus { border-color: #e2a136; }
+
+/* --- Chips (header, footer, panels) ------------------------------------- */
+
+.cb-chip-row {
+    spacing: 6px;
+    margin-bottom: 6px;
+}
+
+.cb-button-content { spacing: 6px; }
+
+/* .cb-capture-btn is the PDF panel's button; it gets the chip look so every
+   button in the popup speaks the same visual language. */
+.cb-chip,
+.cb-capture-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border-width: 1px;
+    border-style: solid;
+    font-weight: bold;
+    font-size: 0.92em;
+    box-shadow: none;
+    transition-duration: 120ms;
+}
+
+.cb-chip-icon { padding: 6px 9px; }
+
+.cb-dark .cb-chip,
+.cb-dark .cb-capture-btn {
+    color: #e9dfd3;
+    background-color: #2d241e;
+    border-color: #3b3029;
+}
+.cb-dark .cb-chip:hover,
+.cb-dark .cb-chip:focus,
+.cb-dark .cb-capture-btn:hover,
+.cb-dark .cb-capture-btn:focus {
+    color: #f6eee4;
+    background-color: #3a2e22;
+    border-color: rgba(242, 184, 75, 0.55);
+}
+
+.cb-light .cb-chip,
+.cb-light .cb-capture-btn {
+    color: #3d3128;
+    background-color: #ffffff;
+    border-color: #eadfcb;
+}
+.cb-light .cb-chip:hover,
+.cb-light .cb-chip:focus,
+.cb-light .cb-capture-btn:hover,
+.cb-light .cb-capture-btn:focus {
+    color: #2a211b;
+    background-color: #fdecc8;
+    border-color: #e2a136;
+}
+
+/* On: a solid yolk fill, the loudest thing in the popup, so a paused monitor
+   or a held inhibitor is impossible to miss at a glance. */
+.cb-dark .cb-chip:checked,
+.cb-light .cb-chip:checked {
+    color: #2a1a05;
+    background-color: #f2b84b;
+    border-color: #f2b84b;
+}
+.cb-dark .cb-chip:checked:hover,
+.cb-light .cb-chip:checked:hover {
+    background-color: #f5c56a;
+    border-color: #f5c56a;
+}
+
+/* Dictation is red while recording, the same as the Voce overlay, so the
+   button and the overlay agree about what is happening. */
+.cb-dark .cb-voce-btn:checked,
+.cb-light .cb-voce-btn:checked {
+    color: #ffffff;
+    background-color: #e0563a;
+    border-color: #e0563a;
+}
+
+.cb-chip-off { opacity: 0.55; }
+
+.cb-dark .cb-chip-danger { color: #ff8a73; border-color: #ff8a73; }
+.cb-light .cb-chip-danger { color: #b3261e; border-color: #b3261e; }
+
+/* --- Section headings --------------------------------------------------- */
+
+/* PopupSeparatorMenuItem hands us a bare label at body size, which reads as
+   another row. Small, bold and yolk turns it back into a heading. No
+   letter-spacing: St measures the label without it and then ellipsizes. Reached
+   through a type selector because the class goes on the item rather than on
+   the separator's internal .label. */
+.cb-section {
+    padding-top: 10px;
+    padding-bottom: 2px;
+}
+
+.cb-section StLabel {
+    font-size: 0.78em;
+    font-weight: bold;
+}
+.cb-dark .cb-section StLabel { color: #f2b84b; }
+.cb-light .cb-section StLabel { color: #94570c; }
+
+.cb-dark .cb-section .popup-separator-menu-item-separator { background-color: #3b3029; }
+.cb-light .cb-section .popup-separator-menu-item-separator { background-color: #eadfcb; }
+
+/* --- Result rows -------------------------------------------------------- */
+
+.cb-scroll {
+    /* max-height is set inline per-monitor in _syncScrollHeight; keep a stable
+       width so the popup doesn't jump around as the history changes. */
+    min-width: 460px;
+    max-width: 640px;
+}
+
+/* The row is a layout box and nothing else. Everything painted lives on
+   .cb-item, so the selection fills the row the theme already laid out instead
+   of drawing a second, inset rectangle within it. */
+.cb-row { spacing: 0; }
+
+/* transition-duration sits on the base class as well, or the highlight would
+   snap back instead of fading out when the state class is removed. */
+.cb-item {
+    margin: 1px 0;
+    padding: 8px 10px;
+    border-radius: 12px;
+    transition-duration: 140ms;
+}
+
+.cb-dark .cb-item { color: #f6eee4; }
+.cb-light .cb-item { color: #2a211b; }
+
+.cb-dark .cb-item:hover { background-color: rgba(255, 238, 214, 0.05); }
+.cb-light .cb-item:hover { background-color: rgba(148, 87, 12, 0.05); }
+
+/* Command-bar selection. Key focus never leaves the search entry, so the
+   highlight is drawn by us (see Indicator._setSelected) and is the only
+   selection affordance the list has. */
+.cb-dark .cb-item.cb-selected {
+    background-color: rgba(242, 184, 75, 0.14);
+}
+.cb-light .cb-item.cb-selected {
+    background-color: rgba(242, 184, 75, 0.26);
+}
+
+/* Copy confirmation (see Indicator._flash). Stronger than the selection, so it
+   reads as a distinct event on a row that is usually already selected. */
+.cb-dark .cb-item.cb-copied { background-color: rgba(242, 184, 75, 0.32); }
+.cb-light .cb-item.cb-copied { background-color: rgba(242, 184, 75, 0.5); }
 
 .cb-thumb {
-    border-radius: 6px;
+    border-radius: 8px;
     margin-right: 12px;
     margin-top: 2px;
     margin-bottom: 2px;
@@ -42,158 +250,18 @@
     background-color: rgba(128, 128, 128, 0.08);
 }
 
-.cb-meta {
-    spacing: 2px;
-}
-
-.cb-name {
-    font-size: 0.95em;
-    font-weight: bold;
-}
-
-.cb-hint {
-    font-size: 0.8em;
-    /* Follows the current theme's foreground instead of a hardcoded white,
-       so it stays readable on light themes too. */
-    color: inherit;
-    opacity: 0.7;
-}
-
-.cb-btn-row {
-    spacing: 8px;
-}
-
-.cb-scroll {
-    /* max-height is set inline per-monitor in _syncScrollHeight; keep a stable
-       width so the popup doesn't jump around as the history changes. Wider than
-       a plain history list needed, to fit a two-line result plus the
-       right-aligned action hint without ellipsizing the title too early. */
-    min-width: 420px;
-    max-width: 640px;
-}
-
-.cb-capture-btn {
-    padding: 6px 12px;
-}
-
-/* The colour picker, icon-only. Area and Screen split the row between them and
-   carry its emphasis; this sits at its natural width beside them, roughly a
-   quarter of the footprint a third labelled button had. */
-.cb-pick-btn {
-    padding: 6px;
-    border-radius: 6px;
-}
-
-.cb-search {
-    margin: 4px 0;
-    min-width: 420px;
-}
-
-/* Section headings — the provider titles that PopupSeparatorMenuItem draws
-   beside its rule ("Answer", "Things you copied"). The item hands us a bare
-   St.Label at body size and full strength, which reads as another row rather
-   than as a label for the rows beneath it. Small and tertiary turns it back
-   into a heading. Applied in Indicator._sectionHeader.
-
-   Reached through a type selector because the class goes on the item rather
-   than on the label. PopupSeparatorMenuItem does expose the label as .label,
-   but styling the item keeps the sheet off an internal of someone else's
-   widget across the five Shell versions metadata.json claims. The only other
-   child is the rule itself, an St.Widget, so it cannot match. */
-.cb-section StLabel {
-    font-size: 0.8em;
-    font-weight: bold;
-    color: inherit;
-    opacity: 0.55;
-}
-
-/* Per-row Pin / Delete actions, vertically centred against the thumbnail and
-   revealed a little more on hover so they stay unobtrusive at rest. */
-.cb-row-actions {
-    spacing: 4px;
-    margin-left: 8px;
-}
-
-/* Deliberately not Shell's .icon-button: that carries padding: 0.818em, which
-   at this font size is roughly 11px a side and would grow the row taller than
-   its 64px thumbnail. The hover surface is ours instead — at rest these were
-   opacity alone, i.e. a dimmed glyph with no target to aim at. */
-.cb-row-btn {
-    padding: 4px;
-    border-radius: 4px;
-    opacity: 0.55;
-}
-
-.cb-row-btn:hover,
-.cb-row-btn:focus {
-    background-color: rgba(128, 128, 128, 0.25);
-    opacity: 1;
-}
-
-.cb-row-btn.cb-pinned {
-    opacity: 1;
-}
-
-/* The row is a layout box and nothing else: no background, no radius, no
-   padding. Everything painted lives on .cb-item below.
-   It used to carry an 8px radius and 2px padding of its own *inside*
-   PopupBaseMenuItem, which brings the theme's own radius and 9px 12px padding
-   — so every row drew two nested rounded rectangles and the selection
-   highlight sat visibly inset from the row it was selecting. */
-.cb-row {
-    spacing: 0;
-}
-
-/* The menu item wrapping each result. Selection and the copy flash are drawn
-   here so they fill the row the theme already laid out, and so they line up
-   with the theme's own :hover background rather than floating inside it.
-   transition-duration has to sit on the base class as well, or the highlight
-   would snap back instead of fading out when the state class is removed. */
-.cb-item {
-    transition-duration: 180ms;
-}
-
-/* Copy confirmation, played on the row the user clicked (see Indicator._flash).
-   Stays neutral rather than taking the accent: St cannot derive an alpha from
-   -st-accent-color, and a solid accent fill is far too loud for a 180ms flash
-   on a row that may already be selected. The accent shows up in .cb-hint-ok
-   instead, which is text and so wants a solid colour anyway. */
-.cb-item.cb-copied {
-    background-color: rgba(128, 128, 128, 0.4);
-}
-
-/* Command-bar selection. Key focus never leaves the search entry, so the
-   highlight is drawn by us (see Indicator._setSelected) rather than coming from
-   the menu's own focus handling — which also makes it the only selection
-   affordance the list has. Deliberately weaker than .cb-copied, which has to
-   read as a distinct event on top of a row that may already be selected; but
-   stronger than the old 0.22, which over a #FAFAFA popup was nearly invisible. */
-.cb-item.cb-selected {
-    background-color: rgba(128, 128, 128, 0.3);
-}
-
-/* The calculator's result. Bigger and monospaced so a number reads as an answer
-   rather than as one more search hit. */
-.cb-answer {
-    font-size: 1.25em;
-    font-family: monospace;
-}
-
-/* Right-aligned action hint on a result row, e.g. "Enter". */
-.cb-accel {
-    font-size: 0.8em;
-    color: inherit;
-    opacity: 0.55;
-    margin-left: 8px;
+/* Vault-row swatch for #rrggbb text entries. 32px matches the icon it
+   replaces; the inline background-color wins over this. */
+.cb-swatch {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(128, 128, 128, 0.55);
 }
 
 /* A literal character standing in for a thumbnail (emoji, symbols). The only
    absolute font-size in this sheet, and deliberately so: it has to match the
-   symbolic icons it sits alongside, and those are sized from JS as
-   `icon_size: 32`, which the Shell's text-scaling factor does not touch. In em
-   the glyph would grow with the text while every icon beside it stayed at 32px,
-   and overflow the fixed box below. Noto Color Emoji is listed explicitly
-   because the theme's default font has only monochrome coverage. */
+   symbolic icons beside it, which are sized from JS as `icon_size: 32` and do
+   not follow the Shell's text-scaling factor. */
 .cb-glyph {
     font-size: 26px;
     font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
@@ -202,37 +270,253 @@
     text-align: center;
 }
 
-/* Applied next to .cb-hint, whose opacity it lifts while the flash is up. The
-   literal is GNOME's stock blue and stands alone on 45/46; on 47+ extension.js
-   adds .cb-accent and the tick follows whatever accent the user picked. Two
-   rules rather than two declarations in one block, so that a Shell which cannot
-   parse the keyword never sees it override a colour that already resolved. */
-.cb-hint-ok {
-    color: #62a0ea;
-    opacity: 1;
+.cb-meta { spacing: 2px; }
+
+.cb-name {
+    font-size: 0.95em;
+    font-weight: bold;
 }
 
-.cb-accent .cb-hint-ok {
-    color: -st-accent-color;
+.cb-hint { font-size: 0.8em; }
+.cb-dark .cb-hint { color: #c9bcae; }
+.cb-light .cb-hint { color: #6b5d50; }
+
+/* The tick that replaces a row's hint during the copy flash. */
+.cb-dark .cb-hint.cb-hint-ok { color: #f2b84b; }
+.cb-light .cb-hint.cb-hint-ok { color: #94570c; }
+
+/* The calculator's result. Bigger and monospaced so a number reads as an
+   answer rather than as one more search hit. */
+.cb-answer {
+    font-size: 1.25em;
+    font-family: monospace;
 }
 
-/* Keep awake is shown as a glow around the full-colour panel icon.
-   A literal glow is used on GNOME 45/46; on 47+ .cb-accent follows the user
-   accent colour. The accessible name in _syncAwakeIcon provides the same state
-   non-visually. */
+/* Right-aligned action word on a result row ("Paste", "Open"), drawn as a
+   small pill so it reads as what Enter will do rather than as more text. */
+.cb-accel {
+    font-size: 0.72em;
+    font-weight: bold;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.cb-dark .cb-accel { color: #a89887; background-color: #2d241e; }
+.cb-light .cb-accel { color: #7a6a5b; background-color: #f2e8d6; }
+.cb-dark .cb-selected .cb-accel { color: #2a1a05; background-color: #f2b84b; }
+.cb-light .cb-selected .cb-accel { color: #2a1a05; background-color: #f2b84b; }
+
+/* Per-row Pin / Snippet / Delete actions. Deliberately not Shell's
+   .icon-button: its 0.818em padding would grow the row taller than its 64px
+   thumbnail. */
+.cb-row-actions {
+    spacing: 2px;
+    margin-left: 8px;
+}
+
+.cb-row-btn {
+    padding: 5px;
+    border-radius: 8px;
+}
+.cb-dark .cb-row-btn { color: #a89887; }
+.cb-light .cb-row-btn { color: #7a6a5b; }
+.cb-dark .cb-row-btn:hover,
+.cb-dark .cb-row-btn:focus { color: #f6eee4; background-color: rgba(255, 238, 214, 0.1); }
+.cb-light .cb-row-btn:hover,
+.cb-light .cb-row-btn:focus { color: #2a211b; background-color: rgba(148, 87, 12, 0.1); }
+
+.cb-dark .cb-row-btn.cb-pinned { color: #f2b84b; }
+.cb-light .cb-row-btn.cb-pinned { color: #c47f14; }
+
+/* Non-reactive "No snippets yet…" style rows. */
+.cb-dark .popup-menu-item:insensitive { color: #a89887; }
+.cb-light .popup-menu-item:insensitive { color: #7a6a5b; }
+
+/* --- Footer ------------------------------------------------------------- */
+
+.cb-footer {
+    margin-top: 6px;
+    padding: 8px 4px 0;
+    border-top-width: 1px;
+    border-top-style: solid;
+}
+.cb-dark .cb-footer { border-top-color: #3b3029; }
+.cb-light .cb-footer { border-top-color: #eadfcb; }
+
+.cb-footer-bar { spacing: 8px; }
+.cb-footer-hints { spacing: 14px; }
+.cb-hint-pair { spacing: 6px; }
+.cb-overflow { spacing: 6px; }
+
+.cb-keycap {
+    font-size: 0.72em;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 5px;
+    border-width: 1px 1px 2px 1px;
+    border-style: solid;
+}
+.cb-dark .cb-keycap { color: #e9dfd3; background-color: #2d241e; border-color: #4a3c32; }
+.cb-light .cb-keycap { color: #3d3128; background-color: #ffffff; border-color: #dccfb8; }
+
+.cb-hint-label { font-size: 0.8em; }
+.cb-dark .cb-hint-label { color: #a89887; }
+.cb-light .cb-hint-label { color: #7a6a5b; }
+
+/* --- Panels (sensors, PDF, notepad) ------------------------------------- */
+
+.cb-panel {
+    spacing: 12px;
+    padding: 8px 4px;
+}
+
+.cb-panel-row { spacing: 16px; }
+
+/* Width-capped so a long device alias ellipsizes instead of pushing the rest
+   of the grid off the popup. Wide enough for the 56px ring plus room. */
+.cb-panel-tile {
+    spacing: 6px;
+    width: 88px;
+}
+
+.cb-panel-caption {
+    font-size: 0.8em;
+    text-align: center;
+}
+
+/* Fans sit under the gauges as a plain readout: RPM has no ceiling to fill an
+   arc against, so drawing one would be inventing a number. */
+.cb-fan-strip {
+    spacing: 4px;
+    padding-top: 4px;
+}
+
+.cb-fan-row { spacing: 8px; }
+.cb-fan-rpm { font-family: monospace; }
+
+.cb-dark .cb-panel-caption,
+.cb-dark .cb-fan-icon,
+.cb-dark .cb-fan-rpm,
+.cb-dark .cb-pdf-label,
+.cb-dark .cb-pdf-file,
+.cb-dark .cb-pdf-status,
+.cb-dark .cb-notepad-status { color: #c9bcae; }
+
+.cb-light .cb-panel-caption,
+.cb-light .cb-fan-icon,
+.cb-light .cb-fan-rpm,
+.cb-light .cb-pdf-label,
+.cb-light .cb-pdf-file,
+.cb-light .cb-pdf-status,
+.cb-light .cb-notepad-status { color: #6b5d50; }
+
+/* The battery gauge (see gauge.js). Custom theme properties read with
+   lookup_color, because Cairo needs the colours as numbers. Full is chive
+   green rather than yolk so it can never be mistaken for the warn colour;
+   warn and low stay the Shell's own battery palette.
+
+   None of these may be near-black (rgb(1,1,1) and below): the Clutter/Cogl
+   channel-scale detection in gauge.js cannot tell those from floats. */
+.cb-ring {
+    -cb-ring-track: rgba(128, 128, 128, 0.28);
+    -cb-ring-fill: #7fb069;
+    -cb-ring-warn: #f5c211;
+    -cb-ring-low: #e01b24;
+}
+
+.cb-pdf { spacing: 8px; }
+.cb-pdf-row { spacing: 8px; }
+.cb-pdf-file { font-size: 0.9em; }
+
+/* Before a file is chosen there is nothing to report, so the line reads as a
+   placeholder rather than as content. */
+.cb-pdf-dim { font-style: italic; }
+.cb-dark .cb-pdf-dim { color: #a89887; }
+.cb-light .cb-pdf-dim { color: #7a6a5b; }
+
+.cb-pdf-range {
+    padding: 6px 10px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-style: solid;
+}
+.cb-dark .cb-pdf-range { color: #f6eee4; background-color: #2d241e; border-color: #3b3029; }
+.cb-light .cb-pdf-range { color: #2a211b; background-color: #ffffff; border-color: #eadfcb; }
+.cb-dark .cb-pdf-range:focus { border-color: #f2b84b; }
+.cb-light .cb-pdf-range:focus { border-color: #e2a136; }
+
+.cb-pdf-status { font-size: 0.85em; }
+
+/* The same red as an empty battery, so a rejected range reads as an error. */
+.cb-dark .cb-pdf-status.cb-pdf-error { color: #ff8a73; }
+.cb-light .cb-pdf-status.cb-pdf-error { color: #b3261e; }
+
+/* Extract with nothing valid typed. Dimmed rather than hidden: a button that
+   vanishes and reappears as you type is harder to aim at than one that greys.
+   pdfPanel.js already drops `reactive`, so the theme's .button:insensitive may
+   be dimming this too; 0.55 keeps the two stacked effects readable. */
+.cb-pdf-off { opacity: 0.55; }
+
+/* The notepad page. A slightly brighter sheet than the popup, like paper laid
+   on the counter, so it reads as somewhere to write rather than one more row. */
+.cb-notepad { spacing: 8px; }
+
+.cb-notepad-sheet {
+    min-height: 240px;
+    min-width: 440px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border-width: 2px;
+    border-style: solid;
+}
+.cb-dark .cb-notepad-sheet { background-color: #2d241e; border-color: #3b3029; }
+.cb-light .cb-notepad-sheet { background-color: #fffdf8; border-color: #eadfcb; }
+.cb-dark .cb-notepad-sheet.cb-notepad-focused { border-color: rgba(242, 184, 75, 0.7); }
+.cb-light .cb-notepad-sheet.cb-notepad-focused { border-color: #e2a136; }
+
+.cb-notepad-scroll { max-height: 320px; }
+
+/* The entry is just the ink; the sheet around it is the paper. Explicitly
+   flattened so the theme's own entry chrome does not draw a box within a box. */
+.cb-notepad-entry,
+.cb-notepad-entry:focus,
+.cb-notepad-entry:hover {
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+    box-shadow: none;
+}
+.cb-dark .cb-notepad-entry {
+    color: #f6eee4;
+    hint-text-color: #a89887;
+    selection-background-color: #f2b84b;
+    selected-color: #2a1a05;
+    caret-color: #f2b84b;
+}
+.cb-light .cb-notepad-entry {
+    color: #2a211b;
+    hint-text-color: #7a6a5b;
+    selection-background-color: #f2b84b;
+    selected-color: #2a1a05;
+    caret-color: #94570c;
+}
+
+.cb-notepad-footer { spacing: 6px; }
+.cb-notepad-status { font-size: 0.8em; }
+
+/* --- Top bar ------------------------------------------------------------ */
+
+/* Keep awake shows as a yolk glow around the panel icon. The accessible name
+   set in _syncAwakeIcon carries the same state non-visually. */
 .cb-awake {
-    icon-shadow: 0 0 4px #f6d32d;
+    icon-shadow: 0 0 5px #f2b84b;
 }
 
-.cb-accent .cb-awake {
-    icon-shadow: 0 0 4px -st-accent-color;
-}
+/* --- Floating surfaces (outside the popup, fixed palette) --------------- */
 
-/* Live readout that follows the pointer during a colour pick. This one
-   deliberately breaks the `color: inherit` rule above: that exists so text
-   inside the themed popup survives a light theme, but this floats over arbitrary
-   wallpaper and window content, so it has to carry its own contrast. GNOME's own
-   .screenshot-ui-tooltip is hardcoded for exactly the same reason. */
+/* Live readout that follows the pointer during a colour pick. It floats over
+   arbitrary wallpaper and window content, so it carries its own contrast —
+   GNOME's .screenshot-ui-tooltip is hardcoded for the same reason. */
 .cb-pick-tip {
     background-color: rgba(0, 0, 0, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -256,146 +540,6 @@
     border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
-/* The battery gauge (see gauge.js). Everything here is a custom theme property
-   read with lookup_color rather than something St draws itself — Cairo needs the
-   colours as numbers, so they cannot be `color: inherit` like the text rules
-   above. The track is neutral grey at low alpha, which reads on light and dark
-   alike for the same reason .cb-swatch's border does; warn and low stay the
-   Shell's own battery palette, so a red ring here means what a red battery
-   means in the system menu.
-
-   None of these may be near-black (rgb(1,1,1) and below): the Clutter/Cogl
-   channel-scale detection in gauge.js cannot tell those from floats. */
-.cb-ring {
-    -cb-ring-track: rgba(128, 128, 128, 0.28);
-    -cb-ring-fill: #3584e4;
-    -cb-ring-warn: #f5c211;
-    -cb-ring-low: #e01b24;
-}
-
-/* A full battery is the one ring colour that carries no warning, so it is free
-   to follow the accent. Safe to attempt even though it resolves a custom
-   property to a keyword: themeColor() in gauge.js falls back to a literal
-   whenever lookup_color comes back empty or throws. */
-.cb-accent .cb-ring {
-    -cb-ring-fill: -st-accent-color;
-}
-
-/* The dashboard the sensors shortcut opens into. */
-.cb-panel {
-    spacing: 12px;
-    padding: 8px 4px;
-}
-
-.cb-panel-row {
-    spacing: 16px;
-}
-
-/* Width-capped so a long device alias ellipsizes instead of pushing the rest of
-   the grid off the popup. Wide enough for the 56px ring plus breathing room. */
-.cb-panel-tile {
-    spacing: 6px;
-    width: 88px;
-}
-
-.cb-panel-caption {
-    font-size: 0.8em;
-    color: inherit;
-    opacity: 0.7;
-    text-align: center;
-}
-
-/* Fans sit under the gauges as a plain readout: RPM has no ceiling to fill an
-   arc against, so drawing one would be inventing a number. */
-.cb-fan-strip {
-    spacing: 4px;
-    padding-top: 4px;
-}
-
-.cb-fan-row {
-    spacing: 8px;
-}
-
-.cb-fan-icon {
-    color: inherit;
-    opacity: 0.7;
-}
-
-.cb-fan-rpm {
-    font-family: monospace;
-    color: inherit;
-    opacity: 0.7;
-}
-
-/* The panel the PDF shortcut opens into. Reuses .cb-panel for the container and
-   .cb-capture-btn for both buttons, so it reads as the same kind of surface as
-   the capture row rather than a second visual language. */
-.cb-pdf {
-    spacing: 8px;
-}
-
-.cb-pdf-row {
-    spacing: 8px;
-}
-
-.cb-pdf-label {
-    color: inherit;
-    opacity: 0.7;
-}
-
-.cb-pdf-file {
-    font-size: 0.9em;
-    color: inherit;
-    opacity: 0.7;
-}
-
-/* Before a file is chosen there is nothing to report, so the line reads as a
-   placeholder rather than as content. */
-.cb-pdf-dim {
-    opacity: 0.55;
-    font-style: italic;
-}
-
-/* Matches .cb-search's metrics so the range box reads as the same kind of field
-   as the one above it, just narrower. */
-.cb-pdf-range {
-    padding: 6px 10px;
-    border-radius: 6px;
-}
-
-.cb-pdf-status {
-    font-size: 0.85em;
-    color: inherit;
-    opacity: 0.7;
-}
-
-/* The literal rather than -cb-ring-low: those custom properties are declared on
-   .cb-ring and only resolve for nodes inside it, which this label is not. Same
-   value, so a rejected range reads the same red as an empty battery. */
-.cb-pdf-status.cb-pdf-error {
-    color: #e01b24;
-    opacity: 1;
-}
-
-/* Extract with nothing valid typed. Dimmed rather than hidden: a button that
-   vanishes and reappears as you type is harder to aim at than one that greys.
-   pdfPanel.js already drops `reactive`, so the theme's own .button:insensitive
-   is dimming this too — at the old 0.4 the two stacked into something close to
-   unreadable on a light theme. Held at the tertiary step rather than removed
-   outright, so the disabled state stays visible under a theme that leaves
-   :insensitive alone. */
-.cb-pdf-off {
-    opacity: 0.55;
-}
-
-/* Vault-row swatch for #rrggbb text entries. Sits alongside .cb-thumb, which
-   supplies the radius and right margin; 32px matches the icon it replaces. The
-   border is neutral grey so it reads against light and dark themes alike. */
-.cb-swatch {
-    width: 32px;
-    height: 32px;
-    border: 1px solid rgba(128, 128, 128, 0.55);
-}
 .cb-voce-overlay {
     spacing: 10px;
     padding: 12px 18px;
@@ -425,128 +569,3 @@
 .cb-voce-overlay.cb-recording .cb-voce-bar {
     background-color: #ff7b63;
 }
-
-.cb-voce-btn:checked {
-    color: #ff7b63;
-}
-
-
-/* Native-warm polish. The Shell owns the popup surface; warmth is reserved for
-   focus, selection and state. */
-.cb-menu { padding: 6px; }
-.cb-menu.cb-dark { color: #f7f2ed; }
-.cb-menu.cb-light { color: #241f1c; }
-
-.cb-search {
-    min-width: 440px;
-    margin: 2px 0 6px;
-    padding: 8px 11px;
-    border: 2px solid rgba(128, 128, 128, 0.34);
-    border-radius: 9px;
-    background-color: rgba(128, 128, 128, 0.09);
-    selection-background-color: #9a3418;
-    selected-color: #ffffff;
-}
-.cb-search:focus {
-    border-color: #e86a3d;
-    background-color: rgba(232, 106, 61, 0.06);
-}
-.cb-accent .cb-search:focus { border-color: -st-accent-color; }
-.cb-menu.cb-dark .cb-search { color: #f7f2ed; hint-text-color: #bdb5ad; }
-.cb-menu.cb-light .cb-search { color: #241f1c; hint-text-color: #59514b; }
-
-.cb-btn-row { spacing: 6px; margin-bottom: 3px; }
-.cb-button-content { spacing: 6px; }
-.cb-capture-btn,
-.cb-pick-btn {
-    border: 1px solid rgba(128, 128, 128, 0.22);
-    border-radius: 8px;
-    background-color: rgba(128, 128, 128, 0.08);
-    transition-duration: 120ms;
-}
-.cb-capture-btn { padding: 7px 12px; }
-.cb-pick-btn { padding: 7px; }
-.cb-capture-btn:hover,
-.cb-capture-btn:focus,
-.cb-pick-btn:hover,
-.cb-pick-btn:focus {
-    border-color: rgba(232, 106, 61, 0.52);
-    background-color: rgba(232, 106, 61, 0.12);
-}
-.cb-voce-btn:checked {
-    border-color: #e86a3d;
-    background-color: rgba(232, 106, 61, 0.16);
-    color: #e86a3d;
-}
-
-.cb-status-item { margin: 1px 0; border-radius: 8px; }
-.cb-scroll { min-width: 440px; }
-.cb-section StLabel {
-    font-size: 0.78em;
-    letter-spacing: 0.03em;
-    opacity: 1;
-}
-.cb-menu.cb-dark .cb-section StLabel { color: #d9b46b; }
-.cb-menu.cb-light .cb-section StLabel { color: #6a4b16; }
-
-.cb-item {
-    border-left: 2px solid transparent;
-    border-radius: 8px;
-    transition-duration: 160ms;
-}
-.cb-item:hover { background-color: rgba(128, 128, 128, 0.12); }
-.cb-item.cb-selected {
-    border-left-color: #e86a3d;
-    background-color: rgba(232, 106, 61, 0.14);
-}
-.cb-accent .cb-item.cb-selected { border-left-color: -st-accent-color; }
-.cb-item.cb-copied {
-    border-left-color: #d99b28;
-    background-color: rgba(242, 184, 75, 0.22);
-}
-
-.cb-row-btn { border-radius: 6px; }
-.cb-row-btn:hover,
-.cb-row-btn:focus { background-color: rgba(128, 128, 128, 0.20); }
-.cb-row-btn.cb-pinned,
-.cb-hint-ok { color: #d99b28; opacity: 1; }
-
-.cb-footer-item { border-radius: 8px; }
-.cb-footer-item:hover,
-.cb-footer-item:focus { background-color: rgba(128, 128, 128, 0.12); }
-
-.cb-menu.cb-dark .cb-hint,
-.cb-menu.cb-dark .cb-panel-caption,
-.cb-menu.cb-dark .cb-fan-icon,
-.cb-menu.cb-dark .cb-fan-rpm,
-.cb-menu.cb-dark .cb-pdf-label,
-.cb-menu.cb-dark .cb-pdf-file,
-.cb-menu.cb-dark .cb-pdf-status,
-.cb-menu.cb-dark .cb-footer-item {
-    color: #d4cdc6;
-    opacity: 1;
-}
-.cb-menu.cb-dark .cb-accel,
-.cb-menu.cb-dark .cb-pdf-dim,
-.cb-menu.cb-dark .cb-row-btn {
-    color: #bdb5ad;
-    opacity: 1;
-}
-.cb-menu.cb-light .cb-hint,
-.cb-menu.cb-light .cb-panel-caption,
-.cb-menu.cb-light .cb-fan-icon,
-.cb-menu.cb-light .cb-fan-rpm,
-.cb-menu.cb-light .cb-pdf-label,
-.cb-menu.cb-light .cb-pdf-file,
-.cb-menu.cb-light .cb-pdf-status,
-.cb-menu.cb-light .cb-footer-item,
-.cb-menu.cb-light .cb-accel,
-.cb-menu.cb-light .cb-pdf-dim,
-.cb-menu.cb-light .cb-row-btn {
-    color: #59514b;
-    opacity: 1;
-}
-.cb-menu.cb-dark .cb-status-item,
-.cb-menu.cb-dark .cb-item { color: #f7f2ed; }
-.cb-menu.cb-light .cb-status-item,
-.cb-menu.cb-light .cb-item { color: #241f1c; }

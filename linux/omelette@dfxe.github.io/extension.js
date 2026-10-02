@@ -16,6 +16,7 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { ScreenshotStore, resolveScreenshotsDir } from './screenshotStore.js';
 import { ClipboardMonitor } from './clipboardMonitor.js';
 import { VaultStore } from './vaultStore.js';
+import { NotepadStore } from './notepadStore.js';
 import * as Capture from './capture.js';
 import * as ColorPicker from './colorPicker.js';
 import * as Paste from './paste.js';
@@ -29,6 +30,7 @@ import * as Voce from './voce.js';
 import { makeRing } from './gauge.js';
 import { buildSensorsPanel } from './sensorsPanel.js';
 import { buildPdfPanel } from './pdfPanel.js';
+import { buildNotepadPanel } from './notepadPanel.js';
 import { runSearch, totalResults } from './searchRegistry.js';
 import { historyProvider, screenshotProvider } from './historyProvider.js';
 import { answerProvider } from './answerProvider.js';
@@ -40,6 +42,7 @@ import { sensorsProvider } from './sensorsProvider.js';
 import { pdfProvider } from './pdfProvider.js';
 import { awakeProvider } from './awakeProvider.js';
 import { editProvider } from './editProvider.js';
+import { notepadProvider } from './notepadProvider.js';
 import {
     seedQuicklinksOnce, loadSnippets, saveSnippets, loadQuicklinks, newId,
 } from './configStore.js';
@@ -67,6 +70,10 @@ const PROVIDERS = [
     editProvider,
     historyProvider,
     screenshotProvider,
+    // Last, unlike the other tools: it answers every query with an "Add to
+    // notepad" row, and sections keep provider order — anywhere earlier and
+    // Enter would jot the query down instead of copying the match you wanted.
+    notepadProvider,
 ];
 
 // How long the copied-row flash stays up. Activating a row closes the popup, so
@@ -99,6 +106,7 @@ const SCOPE_HINTS = {
     pdf: 'Pick a PDF, then a page range…',
     awake: 'Keep the screen awake for…',
     edit: 'Pick an image to annotate…',
+    notepad: 'Notepad · Esc to go back',
 };
 
 // Scopes that open into a panel instead of a list of rows. A table for the same
@@ -115,6 +123,7 @@ const PANELS = {
         return actor ? { actor } : null;
     },
     pdf: (ctx, indicator) => indicator._buildPdfPanel(),
+    notepad: (ctx, indicator) => indicator._buildNotepadPanel(),
 };
 
 
@@ -226,12 +235,81 @@ function labelledButtonContent(iconName, label) {
     return box;
 }
 
+// Rows are wide and short, so a degree of yaw moves an edge much further than a
+// degree of pitch. These keep the near edge inside the scroll view's clip.
+const TILT_MAX_YAW = 2.5;
+const TILT_MAX_PITCH = 7;
+
+// Tilt a row toward the pointer while it is hovered, and settle it flat on
+// leave. The stage's perspective projection does the rest.
+function attachHoverTilt(actor) {
+    actor.set_pivot_point(0.5, 0.5);
+
+    actor.connect('motion-event', (_actor, event) => {
+        if (!St.Settings.get().enable_animations) return Clutter.EVENT_PROPAGATE;
+        const [stageX, stageY] = event.get_coords();
+        const [ok, x, y] = actor.transform_stage_point(stageX, stageY);
+        if (!ok || actor.width <= 0 || actor.height <= 0) return Clutter.EVENT_PROPAGATE;
+
+        const nx = Math.min(Math.max(x / actor.width, 0), 1) - 0.5;
+        const ny = Math.min(Math.max(y / actor.height, 0), 1) - 0.5;
+        actor.ease({
+            rotation_angle_y: -nx * 2 * TILT_MAX_YAW,
+            rotation_angle_x: ny * 2 * TILT_MAX_PITCH,
+            duration: 90,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        });
+        return Clutter.EVENT_PROPAGATE;
+    });
+
+    actor.connect('leave-event', (_actor, event) => {
+        // Leaving a row button for the row itself bubbles up as a leave too.
+        const related = event.get_related();
+        if (related && actor.contains(related)) return Clutter.EVENT_PROPAGATE;
+        actor.ease({
+            rotation_angle_x: 0,
+            rotation_angle_y: 0,
+            duration: St.Settings.get().enable_animations ? 260 : 0,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        });
+        return Clutter.EVENT_PROPAGATE;
+    });
+}
+
+// A pill-shaped button for the header and footer bars. Toggle chips draw their
+// on state through St's own :checked pseudo-class, so the stylesheet owns how
+// "on" looks and the code only has to keep `checked` honest.
+function chipButton({ icon, label, accessibleName, toggle = false, extraClass = '' }) {
+    const btn = new St.Button({
+        style_class: `cb-chip button ${extraClass}`.trim(),
+        can_focus: true,
+        toggle_mode: toggle,
+        accessible_name: accessibleName ?? label ?? '',
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    btn.set_child(label
+        ? labelledButtonContent(icon, label)
+        : new St.Icon({ icon_name: icon, icon_size: 16 }));
+    return btn;
+}
+
+// Dimmed rather than hidden, for the same reason as .cb-pdf-off: a control that
+// vanishes is harder to find again than one that greys.
+function setChipEnabled(btn, enabled) {
+    if (!btn) return;
+    btn.reactive = enabled;
+    btn.can_focus = enabled;
+    if (enabled) btn.remove_style_class_name('cb-chip-off');
+    else btn.add_style_class_name('cb-chip-off');
+}
+
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
     _init() {
         super._init(0.0, 'Omelette');
 
         this._vault = null;
+        this._notepad = null;
         this._screenshots = null;
         this._monitor = null;
         this._settings = null;
@@ -242,7 +320,8 @@ class Indicator extends PanelMenu.Button {
         this._searchEntry = null;
         this._capturedId = 0;
         this._focusIdleId = 0;
-        this._pauseToggle = null;
+        this._pauseChip = null;
+        this._awakeChip = null;
         this._clearItem = null;
         this._revealItem = null;
         this._quitItem = null;
@@ -337,6 +416,8 @@ class Indicator extends PanelMenu.Button {
                 // rebuilds off, and the refresh on the next open must not find
                 // a stale one still claiming the keyboard.
                 this._releasePanel();
+                this._notepad?.flush();
+                this._setOverflowOpen(false);
                 Sensors.stopWatching();
                 // Before clearing the entry, not after: set_text('') fires
                 // text-changed synchronously, which refreshes — and that
@@ -463,6 +544,10 @@ class Indicator extends PanelMenu.Button {
             // Escape peels one layer at a time: a panel's own field, then the
             // query, then the tool scope, then the popup itself. Propagating is
             // what lets the menu manager close.
+            if (this._overflowBox?.visible) {
+                this._setOverflowOpen(false);
+                return Clutter.EVENT_STOP;
+            }
             if (this._panel?.onEscape?.()) return Clutter.EVENT_STOP;
             if (this._searchEntry && this._searchEntry.get_text() !== '') {
                 this._searchEntry.set_text('');
@@ -548,7 +633,21 @@ class Indicator extends PanelMenu.Button {
             // Closes the popup itself; see _openEditor for why a row cannot do
             // that by returning { close: true }.
             openEditor: path => this._openEditor(path),
+            notepad: this._notepad,
+            // For providers that must stay free of St (and so testable in
+            // plain gjs) but still need to hand text back.
+            copyText: text => ingestText(text, this._ctx(), { store: false }),
         };
+    }
+
+    _buildNotepadPanel() {
+        if (!this._notepad) return null;
+        return buildNotepadPanel(this._notepad, {
+            onCopyAll: text => {
+                ingestText(text, this._ctx(), { store: false });
+                this.menu.close(BoxPointer.PopupAnimation.FULL);
+            },
+        });
     }
 
     // Open an image in omelette-edit.
@@ -624,8 +723,9 @@ class Indicator extends PanelMenu.Button {
         });
     }
 
-    setContext({ vault, screenshots, monitor, settings, uuid, version, path, openPreferences }) {
+    setContext({ vault, screenshots, monitor, notepad, settings, uuid, version, path, openPreferences }) {
         this._vault = vault;
+        this._notepad = notepad ?? null;
         this._screenshots = screenshots;
         this._monitor = monitor;
         this._settings = settings;
@@ -688,39 +788,16 @@ class Indicator extends PanelMenu.Button {
             this.menu.box.add_style_class_name('cb-accent');
 
         this.menu.addMenuItem(this._makeSearchRow());
-        this.menu.addMenuItem(this._makeCaptureRow());
+        this.menu.addMenuItem(this._makeChipRow());
 
-        this._pauseToggle = new PopupMenu.PopupSwitchMenuItem('Pause monitoring',
-            this._settings ? this._settings.get_boolean('paused') : false);
-        this._pauseToggle.add_style_class_name('cb-status-item');
-        this._pauseToggle.connect('toggled', (_i, state) =>
-            this._settings?.set_boolean('paused', state));
         if (this._settings) {
             this._pausedChangedId = this._settings.connect('changed::paused', () =>
-                this._pauseToggle.setToggleState(this._settings.get_boolean('paused')));
-        }
-        this.menu.addMenuItem(this._pauseToggle);
-
-        // Writes the setting and stops. Everything about the inhibitor itself —
-        // acquiring it, the deadline, releasing it — is reconciled by one
-        // `changed::awake` handler in enable(), so this switch, the shortcut,
-        // the command-bar rows and the preferences window cannot disagree.
-        this._awakeToggle = new PopupMenu.PopupSwitchMenuItem('Keep awake',
-            this._settings ? this._settings.get_boolean('awake') : false);
-        this._awakeToggle.add_style_class_name('cb-status-item');
-        this._awakeToggle.connect('toggled', (_i, state) => {
-            // Clear any deadline: the switch means "until I turn it off".
-            // Leaving a stale one would expire the new hold immediately.
-            this._settings?.set_int64('awake-until', 0);
-            this._settings?.set_boolean('awake', state);
-        });
-        if (this._settings) {
+                this._pauseChip.set_checked(this._settings.get_boolean('paused')));
             this._awakeChangedId = this._settings.connect('changed::awake', () => {
-                this._awakeToggle.setToggleState(this._settings.get_boolean('awake'));
+                this._awakeChip.set_checked(this._settings.get_boolean('awake'));
                 this._syncAwakeIcon();
             });
         }
-        this.menu.addMenuItem(this._awakeToggle);
         this._syncAwakeIcon();
 
         // The two variable-length lists live inside a single scroll view whose
@@ -741,29 +818,108 @@ class Indicator extends PanelMenu.Button {
         this.menu.addMenuItem(scrollWrapper);
         this._scrollView = scrollView;
 
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-        this._clearItem = new PopupMenu.PopupMenuItem('Clear history');
-        this._clearItem.add_style_class_name('cb-footer-item');
-        this._clearItem.connect('activate', () => this._vault?.clear());
-        this.menu.addMenuItem(this._clearItem);
-
-        this._revealItem = new PopupMenu.PopupMenuItem('Reveal newest in Files');
-        this._revealItem.add_style_class_name('cb-footer-item');
-        this._revealItem.connect('activate', () => {
-            const shots = this._screenshots ? this._screenshots.entries : [];
-            if (shots.length > 0) revealInFiles(shots[0]);
-        });
-        this.menu.addMenuItem(this._revealItem);
-
-        // Unlike the vault/screenshot rows, this one doesn't override activate():
-        // PopupMenuBase's default close-on-activate is exactly what we want here.
-        this._quitItem = new PopupMenu.PopupMenuItem('Quit');
-        this._quitItem.add_style_class_name('cb-footer-item');
-        this._quitItem.connect('activate', () => this._quit());
-        this.menu.addMenuItem(this._quitItem);
+        this.menu.addMenuItem(this._makeFooter());
 
         this.refresh();
+    }
+
+    // The bar under the list: what the keys do right now on the left, and the
+    // rarely-needed housekeeping folded behind ⋯ on the right. Those used to be
+    // three full-width menu items, which is most of why the popup read as a
+    // stock system menu.
+    _makeFooter() {
+        const item = new PopupMenu.PopupBaseMenuItem({
+            activate: false, hover: false, can_focus: false, reactive: false,
+        });
+        item.add_style_class_name('cb-footer');
+        const bar = new St.BoxLayout({ x_expand: true, style_class: 'cb-footer-bar' });
+
+        this._footerHints = new St.BoxLayout({
+            x_expand: true, style_class: 'cb-footer-hints',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        bar.add_child(this._footerHints);
+
+        this._overflowBox = new St.BoxLayout({
+            x_expand: true, style_class: 'cb-overflow',
+            x_align: Clutter.ActorAlign.END, visible: false,
+        });
+
+        this._clearItem = chipButton({ icon: 'edit-clear-all-symbolic', label: 'Clear history' });
+        this._clearItem.connect('clicked', () => {
+            this._vault?.clear();
+            this._setOverflowOpen(false);
+        });
+
+        this._revealItem = chipButton({ icon: 'folder-open-symbolic', label: 'Reveal newest' });
+        this._revealItem.connect('clicked', () => {
+            const shots = this._screenshots ? this._screenshots.entries : [];
+            this.menu.close(BoxPointer.PopupAnimation.FULL);
+            if (shots.length > 0) revealInFiles(shots[0]);
+        });
+
+        this._quitItem = chipButton({ icon: 'system-shutdown-symbolic', label: 'Quit' });
+        this._quitItem.connect('clicked', () => {
+            this.menu.close(BoxPointer.PopupAnimation.FULL);
+            this._quit();
+        });
+
+        this._overflowBox.add_child(this._clearItem);
+        this._overflowBox.add_child(this._revealItem);
+        this._overflowBox.add_child(this._quitItem);
+        bar.add_child(this._overflowBox);
+
+        this._moreButton = chipButton({
+            icon: 'view-more-horizontal-symbolic',
+            accessibleName: 'More actions',
+            toggle: true,
+            extraClass: 'cb-chip-icon',
+        });
+        this._moreButton.connect('clicked', () =>
+            this._setOverflowOpen(this._moreButton.checked));
+        bar.add_child(this._moreButton);
+
+        item.add_child(bar);
+        return item;
+    }
+
+    _setOverflowOpen(open) {
+        if (!this._overflowBox) return;
+        this._overflowBox.visible = open;
+        this._footerHints.visible = !open;
+        if (this._moreButton.checked !== open) this._moreButton.set_checked(open);
+    }
+
+    // Keycap hints for whatever Enter and Escape would do at this moment.
+    _syncFooterHints() {
+        const hints = this._footerHints;
+        if (!hints) return;
+        hints.destroy_all_children();
+
+        const add = (key, label) => {
+            const pair = new St.BoxLayout({ style_class: 'cb-hint-pair' });
+            pair.add_child(new St.Label({
+                text: key, style_class: 'cb-keycap', y_align: Clutter.ActorAlign.CENTER,
+            }));
+            pair.add_child(new St.Label({
+                text: label, style_class: 'cb-hint-label', y_align: Clutter.ActorAlign.CENTER,
+            }));
+            hints.add_child(pair);
+        };
+
+        if (this._panel) {
+            add('Esc', 'Back');
+            return;
+        }
+        const selected = this._rows[this._selected]?.result;
+        if (selected) {
+            const accel = selected.accel;
+            // Rows without an accel are the history and screenshot rows, which
+            // all copy.
+            add('Enter', !accel ? 'Copy' : accel === 'Enter' ? 'Select' : accel);
+            if (this._rows.length > 1) add('↑↓', 'Move');
+        }
+        add('Esc', this._scope || this._filter !== '' ? 'Back' : 'Close');
     }
 
     // An extension has no process to terminate, so Quit means "turn the
@@ -899,8 +1055,8 @@ class Indicator extends PanelMenu.Button {
 
         const hasItems = this._vault ? this._vault.items.length > 0 : false;
         const hasShots = this._screenshots ? this._screenshots.entries.length > 0 : false;
-        this._clearItem?.setSensitive(hasItems);
-        this._revealItem?.setSensitive(hasShots);
+        setChipEnabled(this._clearItem, hasItems);
+        setChipEnabled(this._revealItem, hasShots);
 
         // Content can change while the popup is open (a fresh copy triggers a
         // rebuild); re-apply the cap so the new scroll view is bounded too.
@@ -923,6 +1079,7 @@ class Indicator extends PanelMenu.Button {
             previous.item.remove_style_class_name('cb-selected');
 
         this._selected = clamped;
+        this._syncFooterHints();
 
         const current = this._rows[clamped];
         if (!current) return;
@@ -1023,48 +1180,37 @@ class Indicator extends PanelMenu.Button {
         this.refresh({ resetSelection: true });
     }
 
-    _makeCaptureRow() {
+    // One row of chips under the search box: the captures and tools on the
+    // left, the two standing toggles on the right. Pause and Keep awake used to
+    // be full-width switch rows, the most "stock system menu" part of the popup.
+    _makeChipRow() {
         const item = new PopupMenu.PopupBaseMenuItem({ reactive: false, can_focus: false });
-        const box = new St.BoxLayout({ x_expand: true, style_class: 'cb-btn-row' });
+        const box = new St.BoxLayout({ x_expand: true, style_class: 'cb-chip-row' });
 
-        const area = new St.Button({
-            child: labelledButtonContent('camera-photo-symbolic', 'Area'),
-            x_expand: true, can_focus: true,
-            style_class: 'cb-capture-btn button',
-            accessible_name: 'Capture an area',
+        const area = chipButton({
+            icon: 'camera-photo-symbolic', label: 'Area', accessibleName: 'Capture an area',
         });
         area.connect('clicked', () => { this.menu.close(); this._capture('area'); });
 
-        const screen = new St.Button({
-            child: labelledButtonContent('video-display-symbolic', 'Screen'),
-            x_expand: true, can_focus: true,
-            style_class: 'cb-capture-btn button',
-            accessible_name: 'Capture the full screen',
+        const screen = chipButton({
+            icon: 'video-display-symbolic', label: 'Screen', accessibleName: 'Capture the full screen',
         });
         screen.connect('clicked', () => { this.menu.close(); this._capture('full'); });
 
-        // An eyedropper rather than a third labelled button. Picking a colour is
-        // a different kind of act from capturing a region, and at icon size it
-        // stops competing with the two captures for the row — which is also why
-        // it is the one button here that does not x_expand.
-        const color = new St.Button({
-            can_focus: true,
-            style_class: 'cb-pick-btn button',
-            child: new St.Icon({ icon_name: 'color-select-symbolic', icon_size: 16 }),
-            accessible_name: 'Pick a color from the screen',
+        // Icon-only: picking a colour, dictating and jotting are different
+        // kinds of act from capturing, and at icon size they stop competing
+        // with the two captures for the row.
+        const color = chipButton({
+            icon: 'color-select-symbolic', accessibleName: 'Pick a color from the screen',
+            extraClass: 'cb-chip-icon',
         });
         color.connect('clicked', () => { this.menu.close(); this._pickColor(); });
 
-        this._voceButtonIcon = new St.Icon({
-            icon_name: 'audio-input-microphone-symbolic', icon_size: 16,
+        this._voceButton = chipButton({
+            icon: 'audio-input-microphone-symbolic', accessibleName: 'Start dictation',
+            toggle: true, extraClass: 'cb-chip-icon cb-voce-btn',
         });
-        this._voceButton = new St.Button({
-            can_focus: true,
-            toggle_mode: true,
-            style_class: 'cb-pick-btn cb-voce-btn button',
-            child: this._voceButtonIcon,
-            accessible_name: 'Start dictation',
-        });
+        this._voceButtonIcon = this._voceButton.get_child();
         this._voceButton.connect('clicked', () => {
             // Close first so the overlay is the only Shell surface left and
             // the focused application remains the paste target.
@@ -1072,10 +1218,44 @@ class Indicator extends PanelMenu.Button {
             Voce.toggle();
         });
 
+        const notepad = chipButton({
+            icon: 'accessories-text-editor-symbolic', accessibleName: 'Open the notepad',
+            extraClass: 'cb-chip-icon',
+        });
+        notepad.connect('clicked', () => this.openForTool('notepad'));
+
+        this._pauseChip = chipButton({
+            icon: 'media-playback-pause-symbolic', label: 'Pause',
+            accessibleName: 'Pause monitoring', toggle: true,
+        });
+        this._pauseChip.set_checked(this._settings?.get_boolean('paused') ?? false);
+        this._pauseChip.connect('clicked', () =>
+            this._settings?.set_boolean('paused', this._pauseChip.checked));
+
+        // Writes the setting and stops. Everything about the inhibitor itself —
+        // acquiring it, the deadline, releasing it — is reconciled by one
+        // `changed::awake` handler in enable(), so this chip, the shortcut,
+        // the command-bar rows and the preferences window cannot disagree.
+        this._awakeChip = chipButton({
+            icon: 'display-brightness-symbolic', label: 'Awake',
+            accessibleName: 'Keep awake', toggle: true,
+        });
+        this._awakeChip.set_checked(this._settings?.get_boolean('awake') ?? false);
+        this._awakeChip.connect('clicked', () => {
+            // Clear any deadline: the chip means "until I turn it off".
+            // Leaving a stale one would expire the new hold immediately.
+            this._settings?.set_int64('awake-until', 0);
+            this._settings?.set_boolean('awake', this._awakeChip.checked);
+        });
+
         box.add_child(area);
         box.add_child(screen);
         box.add_child(color);
         box.add_child(this._voceButton);
+        box.add_child(notepad);
+        box.add_child(new St.Widget({ x_expand: true }));
+        box.add_child(this._pauseChip);
+        box.add_child(this._awakeChip);
         item.add_child(box);
         return item;
     }
@@ -1393,7 +1573,12 @@ class Indicator extends PanelMenu.Button {
         row.add_child(labelBox);
 
         if (result.accel)
-            row.add_child(new St.Label({ text: result.accel, style_class: 'cb-accel' }));
+            row.add_child(new St.Label({
+                text: result.accel, style_class: 'cb-accel',
+                // Without this the pill fills the row's height and turns
+                // into a disc.
+                y_align: Clutter.ActorAlign.CENTER,
+            }));
 
         const flashFor = message => this._flash({ item, hint, thumb, message });
 
@@ -1421,6 +1606,7 @@ class Indicator extends PanelMenu.Button {
         }
 
         item.add_child(row);
+        attachHoverTilt(item);
 
         // Hovering should move the selection, or the mouse and the keyboard end
         // up disagreeing about which row Enter would fire.
@@ -1513,6 +1699,8 @@ export default class OmeletteExtension extends Extension {
 
         this._vault = new VaultStore(this._settings);
         this._vault.load();
+        this._notepad = new NotepadStore();
+        this._notepad.load();
         this._screenshots = new ScreenshotStore(this._settings);
         this._monitor = new ClipboardMonitor(this._settings);
 
@@ -1521,6 +1709,7 @@ export default class OmeletteExtension extends Extension {
             vault: this._vault,
             screenshots: this._screenshots,
             monitor: this._monitor,
+            notepad: this._notepad,
             settings: this._settings,
             uuid: this.uuid,
             version: this.metadata['version-name'] ?? '',
@@ -1775,6 +1964,8 @@ export default class OmeletteExtension extends Extension {
             this._vault = null;
             this._vaultId = 0;
         }
+        this._notepad?.flush();
+        this._notepad = null;
         this._indicator?.destroy();
         this._indicator = null;
         this._settings = null;

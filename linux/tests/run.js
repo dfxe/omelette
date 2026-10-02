@@ -26,6 +26,8 @@ import './editPalette.test.js';
 import './editExport.test.js';
 import './dataDir.test.js';
 import './vaultStore.test.js';
+import './notepadStore.test.js';
+import './notepadProvider.test.js';
 
 import { report } from './harness.js';
 
