@@ -26,10 +26,15 @@ struct WhisperResult {
 
 pub fn transcribe(audio: &Path, model: &Path, language: &str) -> Result<Transcript> {
     let output_base = audio.with_extension("transcript");
+    // Beside the binary for `make install-user`, under libexec for the .deb.
     let whisper = std::env::current_exe()
         .ok()
         .and_then(|executable| executable.parent().map(|parent| parent.join("whisper-cli")))
         .filter(|path| path.is_file())
+        .or_else(|| {
+            Some(Path::new("/usr/libexec/voce/whisper-cli").to_path_buf())
+                .filter(|path| path.is_file())
+        })
         .unwrap_or_else(|| Path::new("whisper-cli").to_path_buf());
     let mut command = Command::new(whisper);
     command.args([

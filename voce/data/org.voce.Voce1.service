@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.voce.Voce1
+Exec=/usr/bin/voce --service
+SystemdService=voce.service

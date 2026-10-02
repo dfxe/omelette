@@ -4,6 +4,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -21,6 +22,28 @@ const INTERFACE = `<node><interface name="org.voce.Voce1">
 
 const VoceProxy = Gio.DBusProxy.makeProxyWrapper(INTERFACE);
 
+// Stop does the whole transcription before it replies, which on a CPU model
+// can take far longer than GDBus's 25 s default. A timeout there is not a
+// failure: the transcript still arrives through TranscriptReady.
+const CALL_TIMEOUT_MS = 10 * 60 * 1000;
+
+// How often a hold checks whether its shortcut is still held down.
+const HOLD_POLL_MS = 40;
+
+// The modifiers a hold shortcut can be built from. Lock and NumLock are left
+// out on purpose: they are latched, not held.
+const HOLD_MODS = Clutter.ModifierType.SHIFT_MASK |
+    Clutter.ModifierType.CONTROL_MASK |
+    Clutter.ModifierType.MOD1_MASK |
+    Clutter.ModifierType.SUPER_MASK |
+    Clutter.ModifierType.HYPER_MASK |
+    Clutter.ModifierType.META_MASK |
+    Clutter.ModifierType.MOD4_MASK;
+
+// The same failure arrives twice from Stop — once as the Error signal and once
+// as the method's error reply — so an identical message this soon is dropped.
+const ERROR_DEDUPE_MS = 2000;
+
 let _proxy = null;
 let _overlay = null;
 let _label = null;
@@ -29,6 +52,14 @@ let _bars = [];
 let _animationTimer = 0;
 let _animationFrame = 0;
 let _holding = false;
+let _holdMods = 0;
+let _holdPollId = 0;
+let _holdGrab = null;
+// A Start still waiting for its reply, and whether a Stop has been asked for
+// meanwhile. See stop().
+let _startPending = false;
+let _stopQueued = false;
+let _lastError = null;
 let _capturedId = 0;
 let _monitorsId = 0;
 let _signalIds = [];
@@ -101,6 +132,10 @@ function setState(state) {
 }
 
 function showError(message) {
+    const now = GLib.get_monotonic_time() / 1000;
+    if (_lastError && _lastError.message === message && now - _lastError.at < ERROR_DEDUPE_MS)
+        return;
+    _lastError = { message, at: now };
     Main.notifyError('Omelette dictation', message);
     if (!_overlay || !_label) return;
     _overlay.visible = true;
@@ -114,43 +149,127 @@ function showError(message) {
     });
 }
 
-function call(method, ...args) {
+const NOT_RUNNING = 'Voce is not running. Start it with: systemctl --user start voce.service';
+
+function describeError(error) {
+    if (error instanceof GLib.Error &&
+        (error.matches(Gio.DBusError, Gio.DBusError.SERVICE_UNKNOWN) ||
+         error.matches(Gio.DBusError, Gio.DBusError.NAME_HAS_NO_OWNER)))
+        return NOT_RUNNING;
+    if (error instanceof GLib.Error && Gio.DBusError.is_remote_error(error))
+        Gio.DBusError.strip_remote_error(error);
+    return error.message ?? String(error);
+}
+
+function call(method, args = [], onDone = null) {
     if (!_proxy) {
-        showError('Voce is unavailable. Install and start the Voce service first.');
+        showError(NOT_RUNNING);
+        onDone?.(false);
         return;
     }
     _proxy[method](...args, (_result, error) => {
-        if (error) showError(error.message ?? String(error));
+        if (error) showError(describeError(error));
+        onDone?.(!error);
     });
 }
 
 export function start() {
     _targetClass = focusedClass();
-    call('StartRemote');
+    _startPending = true;
+    _stopQueued = false;
+    call('StartRemote', [], ok => {
+        _startPending = false;
+        if (_stopQueued && ok) {
+            _stopQueued = false;
+            stop();
+        }
+        _stopQueued = false;
+    });
 }
 
 export function stop() {
-    call('StopRemote', _targetClass ?? focusedClass());
+    // A quick tap can release the shortcut before Start has replied. Stopping
+    // then would reach the service while it is still idle and be ignored,
+    // leaving the microphone open once Start lands — so wait for it.
+    if (_startPending) {
+        _stopQueued = true;
+        return;
+    }
+    call('StopRemote', [_targetClass ?? focusedClass()]);
 }
 
 export function toggle() {
     _targetClass = focusedClass();
-    call('ToggleRemote', _targetClass);
+    call('ToggleRemote', [_targetClass]);
 }
 
+function heldMods() {
+    const [, , mods] = global.get_pointer();
+    return mods & HOLD_MODS;
+}
+
+// Hold-to-talk ends when the shortcut is let go. While an application window
+// has focus its key releases go to that window and never reach the stage, so
+// listening for the release alone left the microphone open indefinitely.
+// Instead, note which modifiers the shortcut was pressed with and poll for any
+// of them coming up — the pointer's modifier state is global on both X11 and
+// Wayland. A shortcut with no modifiers has nothing to poll, so for that one
+// the keyboard is grabbed and the release is caught on the stage.
 export function beginHold() {
     if (_holding) return;
     _holding = true;
     start();
+
+    _holdMods = heldMods();
+    if (_holdMods === 0) {
+        grabKeyboard();
+        return;
+    }
+    _holdPollId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HOLD_POLL_MS, () => {
+        if ((heldMods() & _holdMods) === _holdMods) return GLib.SOURCE_CONTINUE;
+        _holdPollId = 0;
+        endHold();
+        return GLib.SOURCE_REMOVE;
+    });
 }
 
+function grabKeyboard() {
+    try {
+        _holdGrab = Main.pushModal(_overlay, { actionMode: Shell.ActionMode.POPUP });
+    } catch (e) {
+        logError(e, 'omelette: could not grab the keyboard for hold-to-talk');
+        _holdGrab = null;
+    }
+    // Another grab already owns the keyboard: the release will never reach
+    // us, and a hold that cannot end is worse than one that ends at once.
+    if (_holdGrab && (_holdGrab.get_seat_state() & Clutter.GrabState.KEYBOARD) === 0) {
+        Main.popModal(_holdGrab);
+        _holdGrab = null;
+    }
+    if (!_holdGrab) endHold();
+}
+
+function endHold() {
+    if (!_holding) return;
+    _holding = false;
+    clearHold();
+    stop();
+}
+
+function clearHold() {
+    if (_holdPollId) GLib.source_remove(_holdPollId);
+    _holdPollId = 0;
+    _holdMods = 0;
+    if (_holdGrab) Main.popModal(_holdGrab);
+    _holdGrab = null;
+}
+
+// Only reached while the shell itself has keyboard focus: the modifier-less
+// hold above, or a hold started with the popup open.
 function capturedEvent(_actor, event) {
     if (!_holding || event.type() !== Clutter.EventType.KEY_RELEASE)
         return Clutter.EVENT_PROPAGATE;
-    if (event.get_key_symbol() === Clutter.KEY_space) {
-        _holding = false;
-        stop();
-    }
+    if (_holdMods === 0) endHold();
     return Clutter.EVENT_PROPAGATE;
 }
 
@@ -181,29 +300,38 @@ export function enable(callbacks = {}) {
     _monitorsId = Main.layoutManager.connect('monitors-changed', positionOverlay);
     _capturedId = global.stage.connect('captured-event', capturedEvent);
 
+    // The proxy tracks the well-known name, so it keeps working across the
+    // service restarting — or starting for the first time after Omelette did,
+    // which D-Bus activation does on the first call.
     _proxy = new VoceProxy(Gio.DBus.session, BUS_NAME, OBJECT_PATH, proxy => {
-        _signalIds = [
-            proxy.connectSignal('StatusChanged', (_p, _s, [state]) => setState(state)),
-            proxy.connectSignal('TranscriptReady', (_p, _s, [id, text, language]) => {
-                _callbacks?.onTranscript?.({ id, text, language, wmClass: _targetClass });
-            }),
-            proxy.connectSignal('Error', (_p, _s, [message]) => showError(message)),
-        ];
-        setState(proxy.State ?? 'idle');
+        setState(proxy.State || 'idle');
     }, error => {
-        // Keep the proxy: GDBusProxy tracks the well-known name and becomes
-        // usable when a service started after Omelette eventually owns it.
         log(`omelette: Voce service unavailable: ${error.message}`);
     });
+    _proxy.set_default_timeout(CALL_TIMEOUT_MS);
+    // Connected here rather than in the ready callback: that one is skipped
+    // when the first connection attempt fails, and the transcript of every
+    // later dictation would then go nowhere.
+    _signalIds = [
+        _proxy.connectSignal('StatusChanged', (_p, _s, [state]) => setState(state)),
+        _proxy.connectSignal('TranscriptReady', (_p, _s, [id, text, language]) => {
+            _callbacks?.onTranscript?.({ id, text, language, wmClass: _targetClass });
+        }),
+        _proxy.connectSignal('Error', (_p, _s, [message]) => showError(message)),
+    ];
 }
 
 export function markInserted(id, inserted) {
-    if (id > 0) call('MarkInsertedRemote', id, inserted);
+    if (id > 0) call('MarkInsertedRemote', [id, inserted]);
 }
 
 export function shutdown() {
     if (_holding && _proxy) call('CancelRemote');
     _holding = false;
+    clearHold();
+    _startPending = false;
+    _stopQueued = false;
+    _lastError = null;
     if (_capturedId) global.stage.disconnect(_capturedId);
     if (_monitorsId) Main.layoutManager.disconnect(_monitorsId);
     if (_errorTimer) GLib.source_remove(_errorTimer);

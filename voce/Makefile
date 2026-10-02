@@ -24,4 +24,6 @@ install-user: build
 	install -Dm644 data/org.voce.Voce.metainfo.xml "$(HOME)/.local/share/metainfo/org.voce.Voce.metainfo.xml"
 	install -Dm644 data/voce.service "$(HOME)/.config/systemd/user/voce.service"
 	sed -i 's|/usr/bin/voce|%h/.local/bin/voce|' "$(HOME)/.config/systemd/user/voce.service"
+	install -Dm644 data/org.voce.Voce1.service "$(HOME)/.local/share/dbus-1/services/org.voce.Voce1.service"
+	sed -i 's|/usr/bin/voce|$(HOME)/.local/bin/voce|' "$(HOME)/.local/share/dbus-1/services/org.voce.Voce1.service"
 	systemctl --user daemon-reload

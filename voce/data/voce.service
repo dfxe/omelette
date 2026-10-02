@@ -4,10 +4,16 @@ After=graphical-session.target pipewire.service
 PartOf=graphical-session.target
 
 [Service]
-Type=simple
+# dbus rather than simple: systemd then treats the unit as started once the
+# name is on the bus, which is what D-Bus activation waits for.
+Type=dbus
+BusName=org.voce.Voce1
 ExecStart=/usr/bin/voce --service
 Restart=on-failure
 RestartSec=2
 
 [Install]
-WantedBy=default.target
+# PartOf stops the service at logout, so it has to be wanted by the same
+# target; default.target is already active at the next login and would never
+# start it again.
+WantedBy=graphical-session.target

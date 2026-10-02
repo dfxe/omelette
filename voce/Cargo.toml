@@ -35,5 +35,6 @@ assets = [
   ["data/org.voce.Voce.metainfo.xml", "usr/share/metainfo/org.voce.Voce.metainfo.xml", "644"],
   ["data/org.voce.Voce.gschema.xml", "usr/share/glib-2.0/schemas/org.voce.Voce.gschema.xml", "644"],
   ["data/voce.service", "usr/lib/systemd/user/voce.service", "644"],
+  ["data/org.voce.Voce1.service", "usr/share/dbus-1/services/org.voce.Voce1.service", "644"],
   ["README.md", "usr/share/doc/voce/README.md", "644"],
 ]
