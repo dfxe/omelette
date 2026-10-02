@@ -3,13 +3,16 @@
   The GNOME command bar, mid-query. This is the example the README already walks
   through in prose ("100 km in mi"), so the strings here are the real ones: they
   were taken from `evaluate('100 km in mi')` in calc.js, which returns
-  {title: '62.1371192237 mi', subtitle: '100 km'}, and from historyProvider's
-  subtitle template `Text · 11 B · 2m`.
+  {title: '62.1371192237 mi', subtitle: '100 km'}, from historyProvider's
+  subtitle template `Text · 11 B · 2m`, and from notepadProvider's append row.
 
-  Sections follow PROVIDERS order in extension.js, and only the two that match
+  Sections follow PROVIDERS order in extension.js, and only the ones that match
   are drawn — with a query, a provider that finds nothing is hidden rather than
-  printing "No matches". Row one carries .is-selected because key focus never
-  leaves the entry, so the extension draws the selection itself.
+  printing "No matches". The notepad's append row is always last. Row one
+  carries .is-selected because key focus never leaves the entry, so the
+  extension draws the selection itself; the footer hints are what
+  _syncFooterHints prints for it (an 'Enter' accel reads as Select, and a typed
+  query makes Escape go Back).
 
   Nothing here is a capture. Everything below is invented, deliberately dull
   content: no tokens, no credentials, nothing that resembles a real secret.
@@ -34,33 +37,21 @@
             </div>
 
             <div class="popup-wrap">
-                <div class="popup-arrow"></div>
                 <div class="popup">
                     <div class="search">
-                        <span class="i i-search"></span>
                         <span class="search-text">100 km in mi</span>
                         <span class="caret"></span>
                     </div>
 
-                    <div class="capture-row">
-                        <div class="btn">
-                            <span class="i i-camera"></span><span>Area</span>
-                        </div>
-                        <div class="btn">
-                            <span class="i i-display"></span><span>Screen</span>
-                        </div>
-                        <div class="btn tool-btn"><span class="i i-color"></span></div>
-                        <div class="btn tool-btn"><span class="i i-mic"></span></div>
-                    </div>
-
-                    <div class="switch-row">
-                        <span>Pause monitoring</span>
-                        <span class="switch"></span>
-                    </div>
-
-                    <div class="switch-row">
-                        <span>Keep awake</span>
-                        <span class="switch"></span>
+                    <div class="chip-row">
+                        <span class="chip"><span class="i i-camera"></span>Area</span>
+                        <span class="chip"><span class="i i-display"></span>Screen</span>
+                        <span class="chip icon-only"><span class="i i-color"></span></span>
+                        <span class="chip icon-only"><span class="i i-mic"></span></span>
+                        <span class="chip icon-only"><span class="i i-note"></span></span>
+                        <span class="spacer"></span>
+                        <span class="chip"><span class="i i-pause"></span>Pause</span>
+                        <span class="chip is-on"><span class="i i-sun"></span>Awake</span>
                     </div>
 
                     <div class="section">Answer</div>
@@ -87,10 +78,23 @@
                         </div>
                     </div>
 
-                    <div class="sep"></div>
-                    <div class="menu-item">Clear history</div>
-                    <div class="menu-item">Reveal newest in Files</div>
-                    <div class="menu-item">Quit</div>
+                    <div class="section">Notepad</div>
+                    <div class="row">
+                        <div class="thumb"><span class="i i-plus"></span></div>
+                        <div class="meta">
+                            <div class="name">Add “100 km in mi” to notepad</div>
+                            <div class="hint">Jot it down and keep going</div>
+                        </div>
+                        <div class="accel">Add</div>
+                    </div>
+
+                    <div class="footer">
+                        <span class="hint-pair"><span class="keycap">Enter</span>Select</span>
+                        <span class="hint-pair"><span class="keycap">↑↓</span>Move</span>
+                        <span class="hint-pair"><span class="keycap">Esc</span>Back</span>
+                        <span class="spacer"></span>
+                        <span class="chip icon-only"><span class="i i-more"></span></span>
+                    </div>
                 </div>
             </div>
         </div>

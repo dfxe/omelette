@@ -2,26 +2,24 @@
    docs/shots/. These are mockups, not captures: nothing here imports the real
    UI, it reproduces it.
  *
- * Where a number below looks arbitrary it was read off the real thing —
- * linux/omelette@dfxe.github.io/stylesheet.css for the GNOME rows and
- * macos/Omelette/PopoverView.swift for the popover — so a change to either
- * has one obvious place to land here. The values that came across:
+ * Every size and colour below was read off
+ * linux/omelette@dfxe.github.io/stylesheet.css (the "Yolk" skin, dark scheme),
+ * so a change there has one obvious place to land here. Ems are converted at
+ * the 15px Shell body size. The values that came across:
  *
- *   .cb-item       9px 12px padding      .cb-thumb   6px radius, 12px margin
- *   .cb-hint       secondary text        .cb-accel   tertiary text
- *   .cb-selected   coral edge + tint     .cb-swatch  32px, grey 0.55 border
- *   .cb-answer     monospace, 1.25em     .cb-scroll  min-width 440px
- *   .cb-image      proportional, framed .cb-section 0.78em, subtle warm text
- *   popover        frame(width: 620), padding 14, rows 8 apart
+ *   .cb-menu       #221b16, 18px radius, 10px padding, yolk hairline
+ *   .cb-search     2px border, 12px radius, 10px 14px; yolk when focused
+ *   .cb-chip       pill, 6px 12px (icon-only 6px 9px), bold 0.92em
+ *   .cb-item       8px 10px, 12px radius, yolk tint when selected
+ *   .cb-thumb      32px, 8px radius, 12px margin
+ *   .cb-section    0.78em bold yolk, #3b3029 rule
+ *   .cb-accel      0.72em bold pill; solid yolk on the selected row
+ *   .cb-footer     keycaps 0.72em, labels 0.8em, #3b3029 top rule
  *
- * Production resolves secondary and tertiary text to explicit accessible
- * colours in light and dark mode; this replica renders the dark-mode result.
- *
- * Fonts: Cantarell is GNOME's UI font and Inter stands in for SF Pro, which
- * exists on neither this machine nor a CI runner. Both are pinned rather than
- * left to a generic stack because CI re-renders these shots for the live page —
- * the workflow apt-installs fonts-cantarell and fonts-inter so a runner draws
- * them the same way a local build does. */
+ * Cantarell is GNOME's UI font. It is pinned rather than left to a generic
+ * stack because CI re-renders these shots for the live page — the Pages
+ * workflow apt-installs fonts-cantarell so a runner draws them the same way a
+ * local build does. */
 
 * {
     box-sizing: border-box;
@@ -31,6 +29,9 @@ html,
 body {
     margin: 0;
     padding: 0;
+    /* The .mock box is fractionally tall, so its screenshot can catch a row of
+       the page behind it; this keeps that row dark instead of white. */
+    background: #120f0c;
 }
 
 /* The element build.mjs screenshots. Padding is the visible mat around the
@@ -143,6 +144,27 @@ body {
     mask-image: var(--i-calc);
 }
 
+.i-pause {
+    -webkit-mask-image: var(--i-pause);
+    mask-image: var(--i-pause);
+}
+.i-sun {
+    -webkit-mask-image: var(--i-sun);
+    mask-image: var(--i-sun);
+}
+.i-note {
+    -webkit-mask-image: var(--i-note);
+    mask-image: var(--i-note);
+}
+.i-more {
+    -webkit-mask-image: var(--i-more);
+    mask-image: var(--i-more);
+}
+.i-plus {
+    -webkit-mask-image: var(--i-plus);
+    mask-image: var(--i-plus);
+}
+
 :root {
     --i-doc: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><path d='M9.2 1.9H4.7a1 1 0 0 0-1 1v10.2a1 1 0 0 0 1 1h6.6a1 1 0 0 0 1-1V5.2z'/><path d='M9.2 1.9v3.3h3.1'/><path d='M5.9 8.5h4.2M5.9 10.8h3'/></svg>");
     --i-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><rect x='2.2' y='3.3' width='11.6' height='9.4' rx='1.3'/><circle cx='5.7' cy='6.5' r='1'/><path d='M2.6 11.4 6.4 8.1l2.1 1.9 2.1-1.7 2.8 2.8'/></svg>");
@@ -161,19 +183,24 @@ body {
     --i-click: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><path d='M4.3 2.1v9.2l2.3-2.2 1.7 3.9 1.9-.8-1.7-3.8h3.1z'/></svg>");
     --i-align: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'><path d='M2.6 4h10.8M2.6 7.3h7.2M2.6 10.6h10.8M2.6 13.9h7.2'/></svg>");
     --i-calc: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><rect x='3.2' y='1.9' width='9.6' height='12.2' rx='1.3'/><path d='M5.4 4.4h5.2'/><path d='M5.8 7.6h.01M8 7.6h.01M10.2 7.6h.01M5.8 9.8h.01M8 9.8h.01M10.2 9.8h.01M5.8 12h.01M8 12h.01M10.2 12h.01'/></svg>");
+    --i-pause: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='black'><rect x='4' y='3' width='2.6' height='10' rx='.6'/><rect x='9.4' y='3' width='2.6' height='10' rx='.6'/></svg>");
+    --i-sun: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'><circle cx='8' cy='8' r='2.8'/><path d='M8 1.6v1.6M8 12.8v1.6M1.6 8h1.6M12.8 8h1.6M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M3.5 12.5l1.1-1.1M11.4 4.6l1.1-1.1'/></svg>");
+    --i-note: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'><rect x='2.6' y='2.2' width='10.8' height='11.6' rx='1.6'/><path d='M5.3 5.6h5.4M5.3 8h5.4M5.3 10.4h3.2'/></svg>");
+    --i-more: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='black'><circle cx='3.6' cy='8' r='1.3'/><circle cx='8' cy='8' r='1.3'/><circle cx='12.4' cy='8' r='1.3'/></svg>");
+    --i-plus: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'><path d='M8 3v10M3 8h10'/></svg>");
 }
 
-/* ─── GNOME: Adwaita dark shell ─────────────────────────────────────────── */
+/* ─── GNOME: the Yolk popup, dark scheme ────────────────────────────────── */
 
 .gnome {
     /* A stand-in for whatever wallpaper is behind the panel. Kept dim and
-       featureless so it never competes with the popup. */
+       warm so it never competes with the popup. */
     background:
-        radial-gradient(120% 90% at 12% 0%, #2f4858 0%, transparent 60%),
-        radial-gradient(90% 80% at 100% 100%, #3d3350 0%, transparent 55%),
-        linear-gradient(160deg, #1b2027 0%, #14171c 100%);
-    color: #ffffff;
-    font-family: Cantarell, Inter, "DejaVu Sans", sans-serif;
+        radial-gradient(110% 80% at 85% 0%, #4a3523 0%, transparent 60%),
+        radial-gradient(90% 80% at 0% 100%, #2b2f24 0%, transparent 55%),
+        linear-gradient(160deg, #1d1814 0%, #120f0c 100%);
+    color: #f6eee4;
+    font-family: Cantarell, "DejaVu Sans", sans-serif;
     font-size: 15px;
     line-height: 1.3;
 }
@@ -186,8 +213,8 @@ body {
     justify-content: space-between;
     height: 32px;
     padding: 0 10px;
-    border-radius: 6px 6px 0 0;
-    background: rgba(0, 0, 0, 0.86);
+    border-radius: 8px 8px 0 0;
+    background: rgba(0, 0, 0, 0.88);
     font-size: 13.5px;
     font-weight: 700;
 }
@@ -207,171 +234,124 @@ body {
     color: rgba(255, 255, 255, 0.85);
 }
 
-/* The indicator whose menu is open. Adwaita keeps the active panel button
-   filled while its popup is up. */
+/* The indicator whose menu is open stays filled while its popup is up. */
 .panel-item.is-open {
     background: rgba(255, 255, 255, 0.18);
-    color: #ffffff;
 }
 
-.panel-item .i {
-    width: 16px;
-    height: 16px;
-}
-
-/* The popup itself. Adwaita 45+ draws menu content at 12px radius over a
-   hairline light border, with the arrow tucked under the panel. */
-/* Status-area menus open under their own indicator, which is over on the right
-   of the panel — hence flex-end and the arrow's offset rather than centring. */
+/* Status-area menus open under their own indicator, over on the right. */
 .popup-wrap {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    padding-top: 6px;
+    justify-content: flex-end;
+    padding-top: 8px;
 }
 
+/* Wider than .cb-search's 460px minimum because the menu grows to fit its
+   widest child, and the chip row is wider than the entry. */
 .popup {
-    width: 466px;
-    padding: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    background: #2c2c2c;
-    box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.35),
-        0 14px 34px rgba(0, 0, 0, 0.5);
+    width: 548px;
+    padding: 10px;
+    border: 1px solid rgba(242, 184, 75, 0.16);
+    border-radius: 18px;
+    background: #221b16;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
-.popup-arrow {
-    width: 0;
-    height: 0;
-    margin-right: 22px;
-    margin-bottom: -1px;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid #2c2c2c;
-    border-left: 8px solid transparent;
-}
-
-/* Area / Screen / Color. Three equal buttons, .cb-capture-btn's 6px 12px. */
-.capture-row {
-    display: flex;
-    gap: 8px;
-    padding: 2px 2px 6px;
-}
-
-.btn {
-    flex: 1;
-    padding: 6px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 700;
-    text-align: center;
-}
-
-/* St.Entry, focused: the popup grabs it on open, so the mock shows it focused
-   with a caret. */
+/* St.Entry, focused: the popup grabs it on open. */
 .search {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 4px 2px;
-    padding: 7px 10px;
-    border: 2px solid #3584e4;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
+    margin: 0 0 8px;
+    padding: 10px 14px;
+    border: 2px solid #f2b84b;
+    border-radius: 12px;
+    background: #30261d;
+    font-size: 15.75px;
 }
 
-.search .i {
-    width: 16px;
-    height: 16px;
-    opacity: 0.6;
-}
-
-/* Not flex: 1 — the caret sits immediately after the text the way a real entry
-   draws it, rather than being pushed out to the far edge of the field. */
-.search-text {
-    font-size: 14.5px;
-}
-
+/* The caret sits right after the text, the way a real entry draws it. */
 .search-text.is-empty {
-    opacity: 0.5;
+    color: #a89887;
 }
 
 .caret {
-    width: 1px;
-    height: 17px;
-    background: #ffffff;
+    width: 1.5px;
+    height: 19px;
+    margin: 0 1px;
+    background: #f2b84b;
 }
 
-/* PopupSwitchMenuItem. */
-.switch-row {
+.chip-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 8px;
+    gap: 6px;
+    margin: 0 0 6px;
+    padding: 4px 0 2px;
 }
 
-.switch {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    flex: none;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, 0.15);
+.chip-row .spacer {
+    flex: 1;
 }
 
-.switch::after {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    border-radius: 99px;
-    background: #d8d8d8;
-    content: "";
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #3b3029;
+    border-radius: 999px;
+    background: #2d241e;
+    color: #e9dfd3;
+    font-size: 13.8px;
+    font-weight: 700;
 }
 
-/* PopupSeparatorMenuItem(title): the provider name, then a rule taking the
-   rest of the width. .cb-section is what shrinks and dims the label — without
-   it the separator draws its title at body size and full strength, which reads
-   as one more row. 11.8px is the 0.8em step, the same one .hint and .accel
-   sit at. */
+.chip.icon-only {
+    padding: 6px 9px;
+}
+
+.chip .i {
+    width: 16px;
+    height: 16px;
+}
+
+/* On: a solid yolk fill, the loudest thing in the popup. */
+.chip.is-on {
+    border-color: #f2b84b;
+    background: #f2b84b;
+    color: #2a1a05;
+}
+
+/* PopupSeparatorMenuItem(title) with .cb-section: a small yolk label, then a
+   rule taking the rest of the width. */
 .section {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px 6px;
-    font-size: 11.8px;
+    padding: 10px 12px 4px;
+    color: #f2b84b;
+    font-size: 11.7px;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    opacity: 0.55;
 }
 
 .section::after {
     flex: 1;
     height: 1px;
-    background: currentColor;
+    background: #3b3029;
     content: "";
-    opacity: 0.45;
 }
 
-/* A result row: thumb, two-line label, optional accel, optional actions.
-   One element here stands for two in the extension — the PopupBaseMenuItem and
-   the .cb-row box inside it. Padding and the selection belong to the item, which
-   is where .cb-selected is applied and where the theme's own 9px 12px comes
-   from; .cb-row itself paints nothing. */
+/* One element here stands for the PopupBaseMenuItem and its .cb-row box. */
 .row {
     display: flex;
     align-items: center;
-    padding: 9px 12px;
-    border-radius: 8px;
+    margin: 1px 0;
+    padding: 8px 10px;
+    border-radius: 12px;
 }
 
 .row.is-selected {
-    background: rgba(128, 128, 128, 0.3);
+    background: rgba(242, 184, 75, 0.14);
 }
 
 .thumb {
@@ -382,32 +362,34 @@ body {
     align-items: center;
     justify-content: center;
     margin: 2px 12px 2px 0;
-    border-radius: 4px;
-    opacity: 0.9;
+    border-radius: 8px;
 }
 
 .thumb .i {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
 }
 
 /* .cb-swatch: a hex entry renders as its own colour. */
 .thumb.swatch {
     border: 1px solid rgba(128, 128, 128, 0.55);
-    opacity: 1;
 }
 
-/* An image entry shows the complete picture inside a clean landscape frame.
-   A gradient stands in for sample pixels without shipping private content. */
+/* .cb-image-thumb: a neutral frame around the proportional thumbnail. A
+   gradient stands in for sample pixels without shipping private content. */
 .thumb.shot {
     width: 56px;
-    height: 40px;
+    height: 36px;
     border: 1px solid rgba(128, 128, 128, 0.35);
-    border-radius: 6px;
     background:
-        linear-gradient(150deg, #6c8ebf 0%, #3d5a80 48%, #22303f 100%);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-    opacity: 1;
+        linear-gradient(180deg, transparent 0 22%, rgba(0, 0, 0, 0.18) 22% 26%, transparent 26%),
+        linear-gradient(150deg, #e7c27a 0%, #b9824a 45%, #5a3d27 100%);
+}
+
+.thumb.shot.alt {
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 28%, transparent 28%),
+        linear-gradient(150deg, #9fbf86 0%, #5c7d4a 50%, #2f3d27 100%);
 }
 
 .meta {
@@ -417,7 +399,7 @@ body {
 
 .name {
     overflow: hidden;
-    font-size: 14.2px;
+    font-size: 14.25px;
     font-weight: 700;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -432,32 +414,40 @@ body {
 .hint {
     margin-top: 2px;
     overflow: hidden;
-    font-size: 11.8px;
-    opacity: 0.7;
+    color: #c9bcae;
+    font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .accel {
+    flex: none;
     margin-left: 8px;
-    font-size: 11.8px;
-    opacity: 0.55;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #2d241e;
+    color: #a89887;
+    font-size: 10.8px;
+    font-weight: 700;
+}
+
+.row.is-selected .accel {
+    background: #f2b84b;
+    color: #2a1a05;
 }
 
 .row-actions {
     display: flex;
     flex: none;
-    gap: 4px;
+    gap: 2px;
     margin-left: 8px;
 }
 
 .row-btn {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    border-radius: 4px;
-    opacity: 0.55;
+    padding: 5px;
+    border-radius: 8px;
+    color: #a89887;
 }
 
 .row-btn .i {
@@ -465,363 +455,46 @@ body {
     height: 16px;
 }
 
-/* .cb-row-btn.cb-pinned stays at full opacity so a pin reads as state. */
 .row-btn.is-pinned {
-    opacity: 1;
+    color: #f2b84b;
 }
 
-.sep {
-    height: 1px;
-    margin: 6px 0;
-    background: rgba(255, 255, 255, 0.1);
+.empty {
+    padding: 6px 12px 8px;
+    color: #a89887;
+    font-size: 14.25px;
 }
 
-/* Clear history / Reveal newest in Files / Quit. */
-.menu-item {
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 14.5px;
-}
-
-/* ─── macOS: light-mode popover ─────────────────────────────────────────── */
-
-.macos {
-    /* Menu bar apps follow the system appearance and light is the default, so
-       this one is deliberately the bright shot of the three. */
-    background: linear-gradient(155deg, #b7c4d4 0%, #8e9bb0 55%, #6f7a8d 100%);
-    color: #000000;
-    font-family: Inter, "Helvetica Neue", "DejaVu Sans", sans-serif;
-    font-size: 13px;
-    line-height: 1.32;
-    letter-spacing: -0.005em;
-}
-
-.menubar {
+/* The footer: keycap hints for what Enter and Escape do right now, and the
+   ⋯ overflow that holds Clear history, Reveal newest and Quit. */
+.footer {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    height: 25px;
-    padding: 0 12px;
-    border-radius: 5px 5px 0 0;
-    background: rgba(246, 246, 246, 0.86);
-    color: #1d1d1f;
-    font-size: 12.5px;
+    gap: 14px;
+    margin-top: 6px;
+    padding: 8px 4px 0;
+    border-top: 1px solid #3b3029;
 }
 
-.menubar-side {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-}
-
-.menubar .i {
-    width: 15px;
-    height: 15px;
-}
-
-.menubar-item.is-open {
-    display: flex;
-    align-items: center;
-    padding: 2px 5px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-/* frame(width: 620) with .padding(14), and the 760px height SwiftUI pins. */
-.popover {
-    display: flex;
-    width: 620px;
-    height: 760px;
-    flex-direction: column;
-    padding: 14px;
-    border: 0.5px solid rgba(0, 0, 0, 0.16);
-    border-radius: 11px;
-    background: #f2f2f4;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
-    gap: 10px;
-}
-
-.popover-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    padding-top: 7px;
-}
-
-.pop-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 4px;
-}
-
-.pop-title {
-    font-size: 14.5px;
-    font-weight: 600;
-}
-
-.pop-count {
-    color: rgba(0, 0, 0, 0.55);
-    font-family: "DejaVu Sans Mono", monospace;
-    font-size: 11.5px;
-}
-
-.pop-list {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 2px;
-    overflow: hidden;
-}
-
-/* VaultItemRow: padding 8, secondary 0.08 fill, 8px radius, 0.16 border. */
-.mac-row {
-    display: flex;
-    align-items: center;
-    padding: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.16);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.05);
-    gap: 10px;
-}
-
-/* frame(width: 96, height: 68), 6px radius, 0.18 border. */
-.mac-preview {
-    display: flex;
-    width: 96px;
-    height: 68px;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
-    color: rgba(0, 0, 0, 0.5);
-}
-
-.mac-preview .i {
-    width: 22px;
-    height: 22px;
-}
-
-.mac-preview.shot {
-    position: relative;
-    background: linear-gradient(150deg, #8fb0d9 0%, #4b6f9c 52%, #2b3f5c 100%);
-    /* PopoverView's `tilt` and `tape`, images only. Swift derives the sign from
-       the item's UUID; .tilt-b is the other direction. */
-    transform: rotate(1.5deg);
-}
-
-.mac-preview.shot.tilt-b {
-    transform: rotate(-1.5deg);
-}
-
-.mac-preview.shot::before {
-    position: absolute;
-    top: 5px;
-    left: -8px;
-    width: 34px;
-    height: 10px;
-    border-radius: 1px;
-    background: rgba(245, 237, 217, 0.5);
-    content: "";
-    transform: rotate(-45deg);
-}
-
-/* No .swatch counterpart on purpose: rendering a hex entry as its own colour is
-   a GNOME-only feature, and this popover must not imply otherwise. */
-
-.mac-meta {
-    min-width: 0;
+.footer .spacer {
     flex: 1;
 }
 
-.mac-name {
+.hint-pair {
     display: flex;
     align-items: center;
     gap: 6px;
-    overflow: hidden;
-    font-size: 12.5px;
-    font-weight: 600;
+    color: #a89887;
+    font-size: 12px;
 }
 
-.mac-name .i {
-    width: 14px;
-    height: 14px;
-    color: rgba(0, 0, 0, 0.5);
-}
-
-.mac-name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.mac-sub {
-    margin-top: 4px;
-    color: rgba(0, 0, 0, 0.55);
-    font-size: 11px;
-}
-
-.mac-row > .i {
-    width: 16px;
-    height: 16px;
-    color: rgba(0, 0, 0, 0.45);
-}
-
-.mac-divider {
-    height: 1px;
-    background: rgba(0, 0, 0, 0.13);
-}
-
-.pop-foot {
-    display: flex;
-    align-items: center;
-    padding: 0 4px;
-    gap: 10px;
-}
-
-.foot-note {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    color: rgba(0, 0, 0, 0.55);
-    font-size: 11px;
-    gap: 5px;
-}
-
-.foot-note .i {
-    width: 13px;
-    height: 13px;
-}
-
-/* Toggle(.switch) at .controlSize(.mini). */
-.mac-switch {
-    display: flex;
-    align-items: center;
-    font-size: 11.5px;
-    gap: 5px;
-}
-
-.mac-switch i {
-    position: relative;
-    display: block;
-    width: 26px;
-    height: 15px;
-    border-radius: 99px;
-    background: rgba(0, 0, 0, 0.16);
-}
-
-.mac-switch i::after {
-    position: absolute;
-    top: 1.5px;
-    left: 1.5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 99px;
-    background: #ffffff;
-    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.3);
-    content: "";
-}
-
-.mac-btn {
-    display: flex;
-    align-items: center;
-    padding: 3px 9px;
-    border: 0.5px solid rgba(0, 0, 0, 0.16);
-    border-radius: 6px;
-    background: #fdfdfd;
-    box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.12);
-    font-size: 11.5px;
-    gap: 4px;
-}
-
-.mac-btn .i {
-    width: 12px;
-    height: 12px;
-    color: rgba(0, 0, 0, 0.65);
-}
-
-.mac-quit {
-    padding: 3px 4px;
-    color: #0a63cf;
-    font-size: 11.5px;
-}
-
-
-/* Native-warm polish layered over the platform replicas. */
-.popup {
-    width: 486px;
-    border-color: rgba(255, 255, 255, 0.08);
-    background: #2c2c2c;
-}
-.popup-arrow { border-bottom-color: #2c2c2c; }
-.search {
-    margin: 2px 2px 6px;
-    padding: 8px 11px;
-    border-color: #e86a3d;
-    border-radius: 9px;
-    background: rgba(232, 106, 61, 0.06);
-}
-.capture-row { gap: 6px; padding: 0 2px 6px; }
-.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border-color: rgba(255, 255, 255, 0.14);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
-}
-.btn .i {
-    width: 16px;
-    height: 16px;
-}
-.btn.tool-btn { flex: 0 0 auto; padding-inline: 9px; }
-.switch-row { margin: 1px 0; }
-.section {
-    color: #d9b46b;
-    font-size: 11.5px;
-    opacity: 1;
-    letter-spacing: 0.03em;
-}
-.row { border-left: 2px solid transparent; border-radius: 8px; }
-.row.is-selected {
-    border-left-color: #e86a3d;
-    background: rgba(232, 106, 61, 0.14);
-}
-.row-btn.is-pinned { color: #d99b28; opacity: 1; }
-
-.macos {
-    background: linear-gradient(155deg, #d8c5b5 0%, #b99f8b 55%, #8b7464 100%);
-}
-.popover { background: #f7f3ec; }
-.pop-title { color: #e86a3d; font-size: 17px; }
-.pop-count {
-    padding: 4px 9px;
-    border-radius: 99px;
-    background: rgba(242, 184, 75, 0.22);
-}
-.mac-row {
-    border-color: rgba(232, 106, 61, 0.16);
-    border-radius: 12px;
-    background: rgba(242, 184, 75, 0.08);
-}
-.mac-preview {
-    width: 84px;
-    height: 60px;
-    border-color: rgba(232, 106, 61, 0.16);
-    border-radius: 9px;
-}
-.mac-preview.shot::before { background: rgba(242, 184, 75, 0.62); }
-.pop-foot {
-    padding: 10px;
-    border-radius: 12px;
-    background: rgba(242, 184, 75, 0.10);
-}
-.mac-btn.area {
-    border-color: #e86a3d;
-    background: #e86a3d;
-    color: #fff9f0;
+.keycap {
+    padding: 1px 6px;
+    border: 1px solid #4a3c32;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: #2d241e;
+    color: #e9dfd3;
+    font-size: 10.8px;
+    font-weight: 700;
 }

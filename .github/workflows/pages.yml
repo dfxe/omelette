@@ -34,14 +34,14 @@ jobs:
         with:
           node-version: 22
 
-      # The mockups pin Cantarell (GNOME's UI font) and Inter (standing in for
-      # SF Pro). Neither ships on a runner, and this job re-renders the shots
-      # that go live — without them the screenshots would fall back to DejaVu
-      # and stop matching the ones committed from a developer machine.
+      # The mockups pin Cantarell, GNOME's UI font. It doesn't ship on a
+      # runner, and this job re-renders the shots that go live — without it the
+      # screenshots would fall back to DejaVu and stop matching the ones
+      # committed from a developer machine.
       - name: Install the fonts the mockups pin
         run: |
           sudo apt-get update
-          sudo apt-get install -y fonts-cantarell fonts-inter
+          sudo apt-get install -y fonts-cantarell
 
       - name: Install Playwright
         working-directory: docs

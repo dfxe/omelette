@@ -3,7 +3,8 @@
   The GNOME popup at rest — no query, so every provider that has anything to
   show is listed and the entry sits on its placeholder (SEARCH_HINT in
   extension.js). Browsing order is the vault's own: pinned first, then newest
-  first.
+  first, and the first row is selected so Enter copies it, which is what the
+  footer hints say.
 
   The four history rows exist to cover each visual kind vaultVisual() can
   return: a hex string becomes a colour swatch, an image becomes its own
@@ -37,10 +38,8 @@
             </div>
 
             <div class="popup-wrap">
-                <div class="popup-arrow"></div>
                 <div class="popup">
                     <div class="search">
-                        <span class="i i-search"></span>
                         <!-- Nothing typed, so the caret sits ahead of the hint
                              text rather than after it. -->
                         <span class="caret"></span>
@@ -49,33 +48,23 @@
                         >
                     </div>
 
-                    <div class="capture-row">
-                        <div class="btn">
-                            <span class="i i-camera"></span><span>Area</span>
-                        </div>
-                        <div class="btn">
-                            <span class="i i-display"></span><span>Screen</span>
-                        </div>
-                        <div class="btn tool-btn"><span class="i i-color"></span></div>
-                        <div class="btn tool-btn"><span class="i i-mic"></span></div>
-                    </div>
-
-                    <div class="switch-row">
-                        <span>Pause monitoring</span>
-                        <span class="switch"></span>
-                    </div>
-
-                    <div class="switch-row">
-                        <span>Keep awake</span>
-                        <span class="switch"></span>
+                    <div class="chip-row">
+                        <span class="chip"><span class="i i-camera"></span>Area</span>
+                        <span class="chip"><span class="i i-display"></span>Screen</span>
+                        <span class="chip icon-only"><span class="i i-color"></span></span>
+                        <span class="chip icon-only"><span class="i i-mic"></span></span>
+                        <span class="chip icon-only"><span class="i i-note"></span></span>
+                        <span class="spacer"></span>
+                        <span class="chip"><span class="i i-pause"></span>Pause</span>
+                        <span class="chip"><span class="i i-sun"></span>Awake</span>
                     </div>
 
                     <div class="section">Things you copied</div>
 
-                    <div class="row">
-                        <div class="thumb swatch" style="background-color: #4a86cf"></div>
+                    <div class="row is-selected">
+                        <div class="thumb swatch" style="background-color: #f2b84b"></div>
                         <div class="meta">
-                            <div class="name">#4a86cf</div>
+                            <div class="name">#f2b84b</div>
                             <div class="hint">Text · 7 B · 1d</div>
                         </div>
                         <div class="row-actions">
@@ -131,7 +120,7 @@
                     <div class="section">Screenshots</div>
 
                     <div class="row">
-                        <div class="thumb shot"></div>
+                        <div class="thumb shot alt"></div>
                         <div class="meta">
                             <div class="name">Screenshot from 2026-07-30 09-04-51.png</div>
                             <div class="hint">Click to copy image</div>
@@ -141,10 +130,13 @@
                         </div>
                     </div>
 
-                    <div class="sep"></div>
-                    <div class="menu-item">Clear history</div>
-                    <div class="menu-item">Reveal newest in Files</div>
-                    <div class="menu-item">Quit</div>
+                    <div class="footer">
+                        <span class="hint-pair"><span class="keycap">Enter</span>Copy</span>
+                        <span class="hint-pair"><span class="keycap">↑↓</span>Move</span>
+                        <span class="hint-pair"><span class="keycap">Esc</span>Close</span>
+                        <span class="spacer"></span>
+                        <span class="chip icon-only"><span class="i i-more"></span></span>
+                    </div>
                 </div>
             </div>
         </div>

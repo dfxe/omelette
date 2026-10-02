@@ -37,7 +37,6 @@ const SITE = join(DOCS, '_site');
 const SHOT_LIST = [
     { name: 'gnome-command-bar', width: 700, height: 900 },
     { name: 'gnome-history', width: 700, height: 1000 },
-    { name: 'macos-popover', width: 820, height: 900 },
 ];
 
 // 2x so the PNGs stay sharp on the HiDPI screens most visitors have.
