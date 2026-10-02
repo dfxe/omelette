@@ -4,10 +4,10 @@ import Gio from 'gi://Gio';
 
 import { dataDir } from './dataDir.js';
 
-// Keep parity with the macOS VaultStore: bounded ring buffer of copied items,
-// deduplicated by a content fingerprint, persisted as plaintext JSON. Image
-// payloads live as PNG files alongside the JSON (macOS inlines base64; in GJS a
-// file reference is lighter and lets St.Icon thumbnail straight off disk).
+// Bounded ring buffer of copied items, deduplicated by a content fingerprint,
+// persisted as plaintext JSON. Image payloads live as PNG files alongside the
+// JSON rather than inline base64: a file reference is lighter and lets St.Icon
+// thumbnail straight off disk.
 //
 // Limits (history size, entry lifetime) come from GSettings so they can be tuned
 // in prefs; a null settings object falls back to these defaults.
@@ -21,7 +21,7 @@ const PERSIST_DEBOUNCE_MS = 400;
 const WRITE_FLAGS =
     Gio.FileCreateFlags.PRIVATE | Gio.FileCreateFlags.REPLACE_DESTINATION;
 
-// SHA-256 over "<kind>\0<bytes>", matching macOS makeFingerprint(kind:data:).
+// SHA-256 over "<kind>\0<bytes>".
 // `bytes` must be a Uint8Array.
 export function fingerprintFor(kind, bytes) {
     const prefix = new TextEncoder().encode(`${kind}\0`);
@@ -77,8 +77,7 @@ export const VaultStore = GObject.registerClass({
         GLib.mkdir_with_parents(this._imagesDir, 0o700);
     }
 
-    // Move an unreadable vault aside instead of writing over it. Matches macOS
-    // VaultStore.load(), which archives rather than discards. The name is
+    // Move an unreadable vault aside instead of writing over it. The name is
     // timestamped so a second failure can't clobber the first rescue.
     _quarantine() {
         const stamp = GLib.DateTime.new_now_local().format('%Y%m%d-%H%M%S');

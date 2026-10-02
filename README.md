@@ -7,9 +7,8 @@
 **Built for coding agent workflows.**
 
 Clipboard and screenshot history for working with coding agents, right in your
-top bar. For macOS and GNOME.
+GNOME top bar.
 
-![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
 ![GNOME 45-49](https://img.shields.io/badge/GNOME-45--49-4A86CF)
 ![license MIT](https://img.shields.io/badge/license-MIT-green)
 [![website](https://img.shields.io/badge/website-dfxe.github.io%2Fomelette-f0f0ea)](https://dfxe.github.io/omelette)
@@ -17,11 +16,11 @@ top bar. For macOS and GNOME.
 Omelette is an early beta made mainly for coding agent workflows. Reuse prompts and terminal
 output, capture screenshots to share with agents, and keep useful context
 within reach as you move between your editor, terminal, and agent conversations.
-Clipboard history and screenshot capture are available on both macOS and GNOME.
 
-On GNOME, save reusable instructions as snippets, annotate screenshots to point
+Save reusable instructions as snippets, annotate screenshots to point
 out a bug or UI change, dictate instructions with optional local Voce, and use
-Keep awake during long agent runs. The command bar also offers a calculator,
+Keep awake during long agent runs, and jot things down in a notepad that stays
+put between sessions. The command bar also offers a calculator,
 quicklinks and emoji.
 
 Everything stays on your machine. No accounts, no sync. Currency conversion is
@@ -29,7 +28,6 @@ off by default; Voce only uses the network when you explicitly download a
 speech model.
 
 ```
-macos/    Swift + SwiftUI MenuBarExtra app   (macOS 13+, no Xcode project)
 linux/    GNOME Shell extension, GJS / ESM   (GNOME 45–49, no build step)
 voce/     Optional Whisper dictation backend (GNOME/Wayland, GPL-3.0+)
 ```
@@ -38,9 +36,7 @@ voce/     Optional Whisper dictation backend (GNOME/Wayland, GPL-3.0+)
 
 | GNOME — the command bar | GNOME — history and screenshots |
 | ----------------------- | ------------------------------- |
-| ![The GNOME command bar with "100 km in mi" typed in, showing an Answer row reading 62.1371192237 mi above a matching history entry](docs/shots/gnome-command-bar.png) | ![The GNOME popup at rest, listing a pinned colour swatch, a git command, a screenshot thumbnail and a URL, with a Screenshots section beneath](docs/shots/gnome-history.png) |
-
-![The macOS menu-bar popover titled Everything you copied, listing seven copied items above a footer with Pause, Area, Screen and Quit](docs/shots/macos-popover.png)
+| ![The GNOME command bar with "100 km in mi" typed in, showing an Answer row reading 62.1371192237 mi, a matching history entry and a row to add the text to the notepad](docs/shots/gnome-command-bar.png) | ![The GNOME popup at rest, listing a pinned colour swatch, a git command, a screenshot thumbnail and a URL, with a Screenshots section beneath](docs/shots/gnome-history.png) |
 
 > **Rendered mockups with sample data, not live captures.** Layout, strings and
 > number formatting come from the source; the contents are invented. Built from
@@ -48,51 +44,35 @@ voce/     Optional Whisper dictation backend (GNOME/Wayland, GPL-3.0+)
 
 ## ✨ At a glance
 
-The two platforms share a design, not a codebase. GNOME is the more complete
-implementation today.
+- Clipboard history (text + images)
+- Screenshot capture (area / screen)
+- Screen color picker (hex)
+- Image annotation · arrows · boxes · text
+- Keep awake (blocks sleep and blanking)
+- Local voice dictation (optional Voce)
+- Search · pin · delete
+- Pause (incognito)
+- Ranked command bar + keyboard nav
+- Snippets with placeholders
+- Notepad (one persistent scratchpad)
+- Calculator · units · dates
+- Quicklinks + web search
+- Emoji & symbol picker
+- Currency conversion (opt-in, network)
+- Bluetooth battery gauges · fan speeds
+- PDF page extraction (needs poppler)
+- Auto-expiry, size caps, settings UI
+- Configurable shortcuts
+- Password-manager filtering
+- Paste injection
 
-|                                        | macOS | GNOME |
-| -------------------------------------- | :---: | :---: |
-| Clipboard history (text + images)      |   ✅   |   ✅   |
-| Screenshot capture (area / screen)     |   ✅   |   ✅   |
-| Screen color picker (hex)              |   —   |   ✅   |
-| Image annotation · arrows · boxes · text |  —   |   ✅   |
-| Keep awake (blocks sleep and blanking)  |   —   |   ✅   |
-| Local voice dictation (optional Voce)   |   —   |   ✅   |
-| Search · pin · delete                  |   —   |   ✅   |
-| Pause (incognito)                      |   ✅   |   ✅   |
-| Ranked command bar + keyboard nav      |   —   |   ✅   |
-| Snippets with placeholders             |   —   |   ✅   |
-| Calculator · units · dates             |   —   |   ✅   |
-| Quicklinks + web search                |   —   |   ✅   |
-| Emoji & symbol picker                  |   —   |   ✅   |
-| Currency conversion (opt-in, network)  |   —   |   ✅   |
-| Bluetooth battery gauges · fan speeds  |   —   |   ✅   |
-| PDF page extraction (needs poppler)    |   —   |   ✅   |
-| Auto-expiry, size caps, settings UI    |   —   |   ✅   |
-| Configurable shortcuts                 |   —   |   ✅   |
-| Password-manager filtering             |   ✅   |   ✅   |
-| Paste injection                        |   ✅   |   ✅   |
-| Clipboard auto-clear                   |   ✅   |   —   |
-| Encrypted at rest                      |   —   |   —   |
+Not encrypted at rest — see [Storage & privacy](#-storage--privacy).
 
 ## 📦 How to install
 
-Both platforms build from this repo; there are no releases to download.
+Omelette builds from this repo; there are no releases to download.
 
-**macOS** — needs the Xcode command-line tools (`xcode-select --install`). No
-third-party dependencies.
-
-```sh
-cd macos
-./build.sh
-open build/Omelette.app
-```
-
-A vault icon appears in the menu bar. For `⌘V` to paste from the vault, grant
-**Accessibility** under System Settings → Privacy & Security.
-
-**GNOME** — no build step, but `glib-compile-schemas` (from `libglib2.0-bin`) must
+No build step, but `glib-compile-schemas` (from `libglib2.0-bin`) must
 compile the bundled GSettings schema once, and again whenever it changes.
 
 ```sh
@@ -124,40 +104,6 @@ systemctl --user enable --now voce.service
 Open `voce` once to download a Whisper model. Dictation then lives in the
 Omelette menu: hold `Super+Alt+Space`, or toggle with `Super+Alt+D`.
 
-## 🍎 macOS
-
-A vault icon appears in the menu bar; no Dock icon (`LSUIElement`). Copy as usual
-and it lands in the popover; click a row to select it for the next paste.
-
-| Shortcut                | Does                                                      |
-| ----------------------- | --------------------------------------------------------- |
-| `⌘V`                    | Pastes the selected vault item (newest, if none selected)  |
-| `⌃⌥S`                   | Capture an area into the vault                             |
-| `⇧⌘3` / `⇧⌘4` / `⇧⌘5`   | Capture — **replaces** the native macOS screenshot UI      |
-
-None of these are configurable.
-
-> ⚠️ **The native screenshot shortcuts are swallowed, not shared.** While
-> Omelette runs, `⇧⌘3`/`⇧⌘4`/`⇧⌘5` never reach macOS, including the `⇧⌘5`
-> toolbar. Quit to get them back.
-
-`⌘V` is intercepted globally: the app swallows the keystroke, puts the selected
-item on the pasteboard just in time, synthesizes a paste, then wipes it ~350 ms
-later — so the pasteboard sits empty and every paste routes through the vault.
-Needs **Accessibility** permission; without it `⌘V` behaves normally. Screenshots
-go into the app's own storage, and it never scans `$HOME`.
-
-### Current limits
-
-The popover has a Pause toggle, Area, Screen, About and Quit, and nothing else.
-
-- No per-item delete, no clear-history, no pin, no search.
-- History capped at 200 entries, oldest dropped. Not configurable.
-- Images are base64-inline in `vault.json` with no size cap, so a history of
-  Retina screenshots gets very large.
-- To wipe: quit, then
-  `rm ~/Library/Application\ Support/omelette/vault.json`.
-
 ## 🐧 GNOME
 
 An omelette skillet icon appears in the top panel. Copy text or an image and it shows up
@@ -177,7 +123,7 @@ under its own heading, focused the moment the popup opens.
 
 Sections are ordered **Answer**, **Quicklinks**, **Snippets**, **Emoji &
 symbols**, **System**, **Keep awake**, **PDF**, **Edit an image**, **Things you
-copied**, **Screenshots** — each capped, and
+copied**, **Screenshots**, **Notepad** — each capped, and
 hidden when nothing matches. Ranking is shared by every source: exact beats prefix beats word
 boundary beats substring beats loose subsequence (`bgcol` finds
 `background-color`), and shorter matches win ties.
@@ -223,14 +169,20 @@ Activating a row copies it **and** sends `Ctrl+V` to the window that had focus
   [The image editor](#the-image-editor).
 - **Keep awake** — stops the screen blanking and the machine suspending, either
   until you switch it off or for 15 minutes, an hour or two hours. Typing
-  `caffeine`, `coffee` or `insomnia` finds it too. There is also a switch in the
-  popup, and the panel icon takes on a colour while it is holding.
+  `caffeine`, `coffee` or `insomnia` finds it too. There is also an **Awake**
+  chip in the popup, and the panel icon takes on a colour while it is holding.
+- **Notepad** — one scratchpad page that saves as you type and is still there
+  after the popup closes, the Shell restarts or the machine reboots. Open it
+  with the notepad chip under the search box; `Enter` makes a new line and
+  `Esc` goes back. Anything you type in the command bar can be dropped onto
+  the end of the page with the **Add to notepad** row at the bottom of the
+  list, and matching lines from the page show up as results you can copy.
 
 ### The rest
 
 - **History** — text and PNGs, deduplicated, newest first (200 by default). Every
   row has **pin** (exempt from the cap and from expiry) and **delete**.
-- **Pause** — incognito toggle. Password-manager-flagged content is skipped
+- **Pause** — incognito toggle, the **Pause** chip in the popup. Password-manager-flagged content is skipped
   either way.
 - **Screenshots** — the 10 newest PNGs in `~/Pictures/Screenshots`.
 - **Capture** — **Area** and **Screen** via GNOME's own screenshot service.
@@ -239,7 +191,7 @@ Activating a row copies it **and** sends `Ctrl+V` to the window that had focus
 - **About** — type `about` (or `version`) for the version, licence and a link to
   the project; `prefs` opens the preferences window without a terminal. Both only
   answer to their own names, so they never turn up in an ordinary search.
-- **Quit** — turns the extension off from the popup; it stays off across a reboot.
+- **Quit** — turns the extension off from the popup (under `⋯` in the footer, next to **Clear history** and **Reveal newest**); it stays off across a reboot.
 
 Clicking an image row puts real PNG bytes on the clipboard, which GUI apps paste
 directly. Terminals shell out to a helper, so `Ctrl+V` there needs `xclip` (X11)
@@ -407,29 +359,26 @@ with their age shown. Only the currency codes are implied by the request.
 Everything else in the core suite is local. Optional Voce separately downloads
 the speech model you choose; transcription is offline after that.
 
-|                     | macOS                                                       | GNOME                                        |
-| ------------------- | ----------------------------------------------------------- | -------------------------------------------- |
-| History             | `~/Library/Application Support/omelette/vault.json`     | `~/.local/share/omelette/vault.json`     |
-| Images              | inline, base64 in `vault.json`                               | `~/.local/share/omelette/images/*.png`   |
-| Screenshots         | `~/Library/Application Support/omelette/synced-screenshots/` | `~/Pictures/Screenshots/`               |
-| Edited images       | —                                                            | beside the original, or `~/Pictures/Screenshots/` |
-| Snippets, quicklinks | —                                                          | GSettings (`dconf`), as JSON strings          |
-| Cached rates        | —                                                            | `~/.local/share/omelette/rates.json`     |
-| File perms          | `0600`                                                       | `0600` / `0700`                               |
+| | Where |
+| --- | --- |
+| History | `~/.local/share/omelette/vault.json` |
+| Images | `~/.local/share/omelette/images/*.png` |
+| Screenshots | `~/Pictures/Screenshots/` |
+| Edited images | beside the original, or `~/Pictures/Screenshots/` |
+| Snippets, quicklinks | GSettings (`dconf`), as JSON strings |
+| Cached rates | `~/.local/share/omelette/rates.json` |
+| Notepad | `~/.local/share/omelette/notepad.txt` |
+| File perms | `0600` / `0700` |
 
 Snippets live in GSettings so an edit in the preferences window — a separate
 process — reaches the popup straight away, but `dconf` is **not** `0600`-protected
 the way `vault.json` is.
 
-**Neither platform encrypts at rest.** `VaultCrypto.swift` holds a complete
-scheme (Curve25519 ECDH → HKDF-SHA256 → AES-GCM, keys in the Keychain) but
-**nothing calls it yet**, and GNOME's **Encrypt history at rest** toggle is
-likewise inert. Don't copy secrets you wouldn't want written to disk. Both
-platforms skip content a password manager has flagged
-(`org.nspasteboard.ConcealedType` and friends on macOS, `passwordmanagerhint` and
-friends on GNOME), but an app that sets none of them is indistinguishable from
-any other — and macOS also stores unrecognised pasteboard flavors, so it captures
-more than GNOME.
+**History is not encrypted at rest.** The **Encrypt history at rest** toggle
+in preferences is inert for now. Don't copy secrets you wouldn't want written
+to disk. Content a password manager has flagged (`passwordmanagerhint` and
+friends) is skipped, but an app that sets no such hint is indistinguishable
+from any other.
 
 **An unreadable history file is moved aside, never overwritten** — renamed to
 `vault.corrupt-<timestamp>.json`, and the app starts empty.

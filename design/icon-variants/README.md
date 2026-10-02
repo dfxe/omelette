@@ -8,5 +8,5 @@ Five generated PNG explorations for a more immediately recognizable omelette app
 4. Top-down omelette in a skillet
 5. Simplified clay-style folded omelette
 
-`omelette-04-skillet.png` is used for the application icons, menu-bar icons, and website branding.
+`omelette-04-skillet.png` is used for the application icon, top-panel icon, and website branding.
 The other variants remain review concepts.

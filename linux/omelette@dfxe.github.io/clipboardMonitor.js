@@ -5,10 +5,9 @@ import St from 'gi://St';
 
 import { fingerprintFor, collapseText } from './vaultStore.js';
 
-// macOS polls NSPasteboard.changeCount every 150ms because it has no change
-// notification. GNOME does: the compositor's Meta.Selection emits 'owner-changed'
-// whenever clipboard ownership flips, so we listen for that (debounced) and read
-// the content on demand instead of spinning a timer.
+// The compositor's Meta.Selection emits 'owner-changed' whenever clipboard
+// ownership flips, so we listen for that (debounced) and read the content on
+// demand instead of polling on a timer.
 const DEBOUNCE_MS = 150;
 const IGNORE_CAP = 256;
 
@@ -40,8 +39,8 @@ export const ClipboardMonitor = GObject.registerClass({
         this._ownerChangedId = 0;
         this._debounceId = 0;
         // Fingerprints of content this extension itself just placed on the
-        // clipboard (re-copy / capture) — mirrors macOS ignoredFingerprints so
-        // our own writes don't bounce back in as new history.
+        // clipboard (re-copy / capture), so our own writes don't bounce back in
+        // as new history.
         this._ignored = new Set();
     }
 
@@ -101,7 +100,7 @@ export const ClipboardMonitor = GObject.registerClass({
 
         const storeImages = this._settings ? this._settings.get_boolean('store-images') : true;
 
-        // Prefer text (macOS reads .string first), fall back to a PNG image.
+        // Prefer text, fall back to a PNG image.
         clipboard.get_text(St.ClipboardType.CLIPBOARD, (_clip, text) => {
             // Ownership can flip between the check above and this callback: the
             // content we were handed may belong to a *different* owner than the

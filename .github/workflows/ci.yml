@@ -40,15 +40,3 @@ jobs:
       # byte for byte. Needs nothing installed.
       - name: Screenshots are current
         run: node docs/build.mjs --check
-
-  macos:
-    name: macOS app
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # There is no test suite on this side yet, so compiling is the check.
-      # build.sh drives swiftc directly — no Xcode project, no SwiftPM manifest.
-      - name: Build
-        run: ./build.sh
-        working-directory: macos
